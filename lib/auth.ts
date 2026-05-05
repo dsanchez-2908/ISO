@@ -34,16 +34,16 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
  * Genera un token JWT para un usuario
  */
 export function generateToken(user: SessionUser): string {
-  return jwt.sign(
-    {
-      cdUsuario: user.cdUsuario,
-      dsUsuario: user.dsUsuario,
-      cdTipoUsuario: user.cdTipoUsuario,
-      cdEmpresaConsultora: user.cdEmpresaConsultora,
-    },
-    JWT_SECRET,
-    { expiresIn: JWT_EXPIRES_IN }
-  );
+  const payload = {
+    cdUsuario: user.cdUsuario,
+    dsUsuario: user.dsUsuario,
+    cdTipoUsuario: user.cdTipoUsuario,
+    cdEmpresaConsultora: user.cdEmpresaConsultora,
+  };
+  
+  return jwt.sign(payload, JWT_SECRET as string, { 
+    expiresIn: '7d'
+  });
 }
 
 /**
@@ -51,7 +51,7 @@ export function generateToken(user: SessionUser): string {
  */
 export function verifyToken(token: string): any {
   try {
-    return jwt.verify(token, JWT_SECRET);
+    return jwt.verify(token, JWT_SECRET as string);
   } catch (error) {
     return null;
   }

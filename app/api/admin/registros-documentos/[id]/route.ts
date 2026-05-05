@@ -41,11 +41,18 @@ export async function GET(
         rd.cdDocumentoAditus,
         rd.dsObservaciones,
         rd.feCreacion,
-        rd.feModificacion
+        rd.feModificacion,
+        cert.cdCliente,
+        cli.dsRazonSocial as dsNombreCliente,
+        cert.cdNorma,
+        n.dsNombre as dsNombreNorma
       FROM TD_REGISTROS_DOCUMENTOS rd
       INNER JOIN TD_TEMPLATES_DOCUMENTOS td ON rd.cdTemplateDocumento = td.cdTemplateDocumento
       INNER JOIN TD_REQUISITOS r ON rd.cdRequisito = r.cdRequisito
       INNER JOIN TV_ESTADOS e ON rd.cdEstadoDocumento = e.cdEstado
+      INNER JOIN TD_CERTIFICACIONES cert ON rd.cdCertificacion = cert.cdCertificacion
+      INNER JOIN TD_CLIENTES cli ON cert.cdCliente = cli.cdCliente
+      INNER JOIN TD_NORMAS n ON cert.cdNorma = n.cdNorma
       WHERE rd.cdRegistroDocumento = @cdRegistroDocumento
     `, { cdRegistroDocumento });
 

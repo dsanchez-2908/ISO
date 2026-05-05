@@ -54,6 +54,7 @@ interface Norma {
   cdNorma: number;
   cdCodigoNorma: string;
   dsNombre: string;
+  cdEstado: number;
 }
 
 interface Estado {
@@ -119,7 +120,7 @@ export function CertificacionesList({ cdCliente, cdEmpresaConsultora }: Certific
       const response = await fetch(`/api/admin/normas?cdEmpresaConsultora=${cdEmpresaConsultora}`);
       const data = await response.json();
       if (data.success) {
-        setNormas(data.data.filter((n: Norma) => n.cdEstado === 1)); // Solo activas
+        setNormas(data.data.filter((n: any) => n.cdEstado === 1)); // Solo activas
       }
     } catch (error) {
       console.error('Error al cargar normas:', error);

@@ -5,7 +5,7 @@ import { verifyToken } from '@/lib/auth';
 // GET /api/admin/requisitos/[id]
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = request.cookies.get('auth-token')?.value;
@@ -18,7 +18,8 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Token inválido' }, { status: 401 });
     }
 
-    const cdRequisito = parseInt(params.id);
+    const { id } = await params;
+    const cdRequisito = parseInt(id);
 
     const requisitos = await query(`
       SELECT 
@@ -53,7 +54,7 @@ export async function GET(
 // PUT /api/admin/requisitos/[id]
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = request.cookies.get('auth-token')?.value;
@@ -66,7 +67,8 @@ export async function PUT(
       return NextResponse.json({ success: false, error: 'Token inválido' }, { status: 401 });
     }
 
-    const cdRequisito = parseInt(params.id);
+    const { id } = await params;
+    const cdRequisito = parseInt(id);
     const body = await request.json();
     const { cdCodigoRequisito, dsRequisito, dsDescripcion, nuOrden, cdEstado } = body;
 
@@ -100,7 +102,7 @@ export async function PUT(
 // DELETE /api/admin/requisitos/[id]
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = request.cookies.get('auth-token')?.value;
@@ -113,7 +115,8 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Token inválido' }, { status: 401 });
     }
 
-    const cdRequisito = parseInt(params.id);
+    const { id } = await params;
+    const cdRequisito = parseInt(id);
 
     // Soft delete - cambiar estado a inactivo (2)
     await query(`

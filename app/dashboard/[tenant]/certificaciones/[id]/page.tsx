@@ -265,29 +265,29 @@ export default function CertificacionPage() {
                       {templates[requisito.cdRequisito].map(template => (
                         <div key={template.cdTemplateDocumento} className="border rounded overflow-hidden">
                           {/* Template Header */}
-                          <button
-                            onClick={() => handleToggleTemplate(template.cdTemplateDocumento)}
-                            className="w-full px-4 py-2 bg-blue-50 hover:bg-blue-100 flex items-center justify-between"
-                          >
-                            <div className="flex items-center gap-2">
+                          <div className="w-full px-4 py-2 bg-blue-50 hover:bg-blue-100 flex items-center justify-between">
+                            <button
+                              onClick={() => handleToggleTemplate(template.cdTemplateDocumento)}
+                              className="flex items-center gap-2 flex-1 text-left"
+                            >
                               <span className="text-lg">{expandedTemplate === template.cdTemplateDocumento ? '▼' : '▶'}</span>
-                              <div className="text-left">
+                              <div>
                                 <div className="font-medium">{template.dsNombre}</div>
                                 <div className="text-sm text-gray-600">
                                   {template.nuTotalCampos} campos | {template.nuTotalRegistros} registros
                                 </div>
                               </div>
-                            </div>
+                            </button>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleAgregarRegistro(template, requisito);
                               }}
-                              className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                              className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 ml-2"
                             >
                               + Agregar Registro
                             </button>
-                          </button>
+                          </div>
 
                           {/* Registros */}
                           {expandedTemplate === template.cdTemplateDocumento && (

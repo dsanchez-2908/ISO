@@ -5,7 +5,7 @@ import { verifyToken } from '@/lib/auth';
 // GET /api/admin/listas-items/[id]
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = request.cookies.get('auth-token')?.value;
@@ -18,7 +18,8 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Token inválido' }, { status: 401 });
     }
 
-    const cdListaItem = parseInt(params.id);
+    const { id } = await params;
+    const cdListaItem = parseInt(id);
 
     const items = await query(`
       SELECT 
@@ -48,7 +49,7 @@ export async function GET(
 // PUT /api/admin/listas-items/[id]
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = request.cookies.get('auth-token')?.value;
@@ -61,7 +62,8 @@ export async function PUT(
       return NextResponse.json({ success: false, error: 'Token inválido' }, { status: 401 });
     }
 
-    const cdListaItem = parseInt(params.id);
+    const { id } = await params;
+    const cdListaItem = parseInt(id);
     const body = await request.json();
     const { dsValor, dsDescripcion, nuOrden, snActivo } = body;
 
@@ -90,7 +92,7 @@ export async function PUT(
 // DELETE /api/admin/listas-items/[id]
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const token = request.cookies.get('auth-token')?.value;
@@ -103,7 +105,8 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Token inválido' }, { status: 401 });
     }
 
-    const cdListaItem = parseInt(params.id);
+    const { id } = await params;
+    const cdListaItem = parseInt(id);
 
     // Soft delete - cambiar snActivo a false
     await query(`

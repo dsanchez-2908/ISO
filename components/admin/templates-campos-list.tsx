@@ -223,6 +223,19 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validación: Si es Lista con herencia CLIENTE, debe tener entidad seleccionada
+    if (tipoCampoElemento === 'campo' && 
+        parseInt(formData.cdTipoCampo) === 4 && 
+        formData.dsTipoHerencia === 'CLIENTE' && 
+        !formData.dsEntidadCliente) {
+      toast({
+        title: 'Validación',
+        description: 'Debe seleccionar una entidad de cliente cuando la lista hereda de cliente',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       const url = editingCampo
         ? `/api/admin/templates-campos/${editingCampo.cdTemplateCampo}`
@@ -656,8 +669,7 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
                                 </SelectTrigger>
                                 <SelectContent>
                                   {listasItems[parseInt(formData.cdLista)]
-                                    ?.filter(item => item.snActivo !== false)
-                                    .map((item) => (
+                                    ?.map((item) => (
                                       <SelectItem key={item.cdListaItem} value={item.cdListaItem.toString()}>
                                         {item.dsValor}
                                       </SelectItem>
