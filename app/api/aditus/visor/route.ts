@@ -1,14 +1,14 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import sql from 'mssql';
 import { sqlConfig } from '@/lib/db';
-import { getAditusToken, uploadDocumentToAditus } from '@/lib/aditus/client';
+import { getAditusToken } from '@/lib/aditus/client';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { cdEmpresaConsultora, fileContent, fileName, contentType } = body;
+    const { cdEmpresaConsultora, documentId } = body;
 
-    if (!cdEmpresaConsultora || !fileContent || !fileName) {
+    if (!cdEmpresaConsultora || !documentId) {
       return NextResponse.json(
         { success: false, error: 'Faltan datos requeridos' },
         { status: 400 }
@@ -20,7 +20,6 @@ export async function POST(request: Request) {
     const configGlobal = await pool.request().query(`
       SELECT TOP 1
         dsURLTokenAditus,
-        dsURLAgregarDocumentoAditus,
         dsURLVisorAditus,
         dsUsuarioTokenAditus,
         dsClaveTokenAditus
@@ -34,13 +33,12 @@ export async function POST(request: Request) {
       );
     }
 
-    // Obtener librería y clase específica de la empresa
+    // Obtener librería de la empresa
     const gestorDoc = await pool.request()
       .input('cdEmpresaConsultora', sql.Int, cdEmpresaConsultora)
       .query(`
         SELECT 
-          dsCodigoLibreria,
-          dsCodigoClase
+          dsCodigoLibreria
         FROM TD_EMPRESAS_GESTOR_DOCUMENTAL
         WHERE cdEmpresaConsultora = @cdEmpresaConsultora
       `);
@@ -58,10 +56,9 @@ export async function POST(request: Request) {
     const globalConfig = configGlobal.recordset[0];
     const gestorConfig = gestorDoc.recordset[0];
 
-    // Validar que existan todos los parámetros necesarios
-    if (!globalConfig.dsURLTokenAditus || !globalConfig.dsURLAgregarDocumentoAditus ||
+    if (!globalConfig.dsURLTokenAditus || !globalConfig.dsURLVisorAditus ||
         !globalConfig.dsUsuarioTokenAditus || !globalConfig.dsClaveTokenAditus ||
-        !gestorConfig.dsCodigoLibreria || !gestorConfig.dsCodigoClase) {
+        !gestorConfig.dsCodigoLibreria) {
       return NextResponse.json(
         { 
           success: false, 
@@ -73,36 +70,29 @@ export async function POST(request: Request) {
 
     const config = {
       urlToken: globalConfig.dsURLTokenAditus,
-      urlAgregarDocumento: globalConfig.dsURLAgregarDocumentoAditus,
-      urlVisor: globalConfig.dsURLVisorAditus || '',
+      urlAgregarDocumento: '',
+      urlVisor: globalConfig.dsURLVisorAditus,
       usuarioToken: globalConfig.dsUsuarioTokenAditus,
       claveToken: globalConfig.dsClaveTokenAditus,
       codigoLibreria: gestorConfig.dsCodigoLibreria,
-      codigoClase: gestorConfig.dsCodigoClase,
+      codigoClase: '',
     };
 
     // Obtener token de Aditus
     const token = await getAditusToken(config);
 
-    // Subir documento a Aditus
-    const documentId = await uploadDocumentToAditus(
-      config,
-      token,
-      fileContent,
-      fileName,
-      contentType || 'application/pdf'
-    );
+    // Construir URL del visor
+    const visorUrl = `${config.urlVisor}?image="${documentId}"&library="${config.codigoLibreria}"&token="${token}"`;
 
     return NextResponse.json({
       success: true,
       data: {
-        documentId: documentId,
-        fileName: fileName,
+        visorUrl: visorUrl,
       },
     });
   } catch (error) {
-    console.error('Error al subir documento a Aditus:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Error al subir documento a Aditus';
+    console.error('Error al generar URL del visor:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Error al generar URL del visor';
     return NextResponse.json(
       { 
         success: false, 

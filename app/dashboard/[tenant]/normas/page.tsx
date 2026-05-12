@@ -155,7 +155,11 @@ export default function NormasPage() {
 
   const handleEliminarNorma = async (cdNorma: number, nuClientesAsociados: number) => {
     if (nuClientesAsociados > 0) {
-      alert(`No se puede desactivar esta norma porque está asociada a ${nuClientesAsociados} cliente(s).`);
+      toast({
+        variant: 'destructive',
+        title: 'No se puede desactivar',
+        description: `Esta norma está asociada a ${nuClientesAsociados} cliente(s).`,
+      });
       return;
     }
 

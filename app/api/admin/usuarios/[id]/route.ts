@@ -112,6 +112,37 @@ export async function PUT(
     }
 
     const body = await request.json();
+    
+    // Si viene dsClave, es un cambio de contraseña
+    if (body.dsClave) {
+      const { hashPassword } = await import('@/lib/auth');
+      const hashedPassword = await hashPassword(body.dsClave);
+      
+      await query(
+        `
+        UPDATE TD_USUARIOS SET
+          dsClave = @dsClave,
+          snClaveTemporal = @snClaveTemporal,
+          snPrimerIngreso = 0,
+          feModificacion = GETDATE(),
+          cdUsuarioModificacion = @cdUsuarioModificacion
+        WHERE cdUsuario = @cdUsuario
+        `,
+        {
+          cdUsuario,
+          dsClave: hashedPassword,
+          snClaveTemporal: body.snClaveTemporal || 0,
+          cdUsuarioModificacion: decoded.cdUsuario,
+        }
+      );
+
+      return NextResponse.json({
+        success: true,
+        message: 'Contraseña actualizada correctamente',
+      });
+    }
+
+    // Si no, actualizar datos del usuario
     const {
       dsNombreCompleto,
       dsMail,

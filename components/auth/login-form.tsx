@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,8 +22,28 @@ export function LoginForm({ tenant, empresaInfo }: LoginFormProps) {
   const [dsClave, setDsClave] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [superAdminLogo, setSuperAdminLogo] = useState<string | null>(null);
 
   const isSuperAdmin = tenant === 0;
+
+  useEffect(() => {
+    if (isSuperAdmin) {
+      loadSuperAdminConfig();
+    }
+  }, [isSuperAdmin]);
+
+  const loadSuperAdminConfig = async () => {
+    try {
+      const response = await fetch('/api/admin/config');
+      const data = await response.json();
+
+      if (data.success && data.data.dsLogoBase64) {
+        setSuperAdminLogo(data.data.dsLogoBase64);
+      }
+    } catch (error) {
+      console.error('Error al cargar configuración:', error);
+    }
+  };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -82,13 +102,17 @@ export function LoginForm({ tenant, empresaInfo }: LoginFormProps) {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-4">
-          {/* Logo: Super Admin usa logo estático, empresas usan logo de BD */}
+          {/* Logo: Super Admin usa logo de configuración o estático, empresas usan logo de BD */}
           {(isSuperAdmin || empresaInfo?.dsLogo) && (
             <div className="flex justify-center">
               <img
-                src={isSuperAdmin ? '/logo.png' : `data:image/png;base64,${empresaInfo?.dsLogo}`}
+                src={
+                  isSuperAdmin 
+                    ? (superAdminLogo ? `data:image/png;base64,${superAdminLogo}` : '/logo.png')
+                    : `data:image/png;base64,${empresaInfo?.dsLogo}`
+                }
                 alt="Logo"
-                className="h-20 object-contain"
+                className="h-32 object-contain"
               />
             </div>
           )}

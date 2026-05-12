@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { verifyToken, hashPassword } from '@/lib/auth';
+import { verifyToken, hashPassword, verifyPassword } from '@/lib/auth';
 
 /**
  * POST /api/admin/usuarios/[id]/cambiar-password
@@ -43,13 +43,39 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { nuevaClave, esClaveTemporal } = body;
+    const { nuevaClave, esClaveTemporal, passwordActual } = body;
 
     if (!nuevaClave) {
       return NextResponse.json(
         { success: false, error: 'La nueva contraseña es requerida' },
         { status: 400 }
       );
+    }
+
+    // Si se proporciona passwordActual, validarla (cambio voluntario)
+    if (passwordActual) {
+      // Obtener la contraseña actual del usuario
+      const usuarios = await query(
+        `SELECT dsClave FROM TD_USUARIOS WHERE cdUsuario = @cdUsuario`,
+        { cdUsuario }
+      );
+
+      if (usuarios.length === 0) {
+        return NextResponse.json(
+          { success: false, error: 'Usuario no encontrado' },
+          { status: 404 }
+        );
+      }
+
+      const usuario = usuarios[0];
+      const passwordValida = await verifyPassword(passwordActual, usuario.dsClave);
+
+      if (!passwordValida) {
+        return NextResponse.json(
+          { success: false, error: 'La contraseña actual es incorrecta' },
+          { status: 400 }
+        );
+      }
     }
 
     // Encriptar nueva contraseña

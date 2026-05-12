@@ -18,15 +18,15 @@ import {
   Building2,
   Plus,
   Search,
-  Edit,
+  Eye,
   Trash2,
-  UserPlus,
   Loader2,
   LogOut,
+  Settings,
 } from 'lucide-react';
 import { EmpresaFormDialog } from '@/components/admin/empresa-form-dialog';
-import { UsuarioAdminDialog } from '@/components/admin/usuario-admin-dialog';
 import { formatDate } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface Empresa {
   cdEmpresaConsultora: number;
@@ -35,6 +35,7 @@ interface Empresa {
   dsMail: string;
   dsTelefono: string;
   dsLocalidad: string;
+  dsLogo: string | null;
   cdEstado: number;
   dsEstado: string;
   nuUsuarios: number;
@@ -44,20 +45,22 @@ interface Empresa {
 
 export default function EmpresasPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [empresas, setEmpresas] = useState<Empresa[]>([]);
   const [filteredEmpresas, setFilteredEmpresas] = useState<Empresa[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [userName, setUserName] = useState('');
+  const [urlBase, setUrlBase] = useState('');
 
   // Dialogs
   const [formDialogOpen, setFormDialogOpen] = useState(false);
-  const [usuarioDialogOpen, setUsuarioDialogOpen] = useState(false);
   const [selectedEmpresa, setSelectedEmpresa] = useState<any>(null);
 
   useEffect(() => {
     checkAuth();
     loadData();
+    loadConfig();
   }, []);
 
   useEffect(() => {
@@ -101,9 +104,26 @@ export default function EmpresasPage() {
         setFilteredEmpresas(data.data);
       }
     } catch (error) {
-      console.error('Error al cargar empresas:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Error al cargar empresas',
+      });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadConfig = async () => {
+    try {
+      const response = await fetch('/api/admin/config');
+      const data = await response.json();
+
+      if (data.success && data.data.dsURLBase) {
+        setUrlBase(data.data.dsURLBase);
+      }
+    } catch (error) {
+      console.error('Error al cargar configuración:', error);
     }
   };
 
@@ -117,21 +137,11 @@ export default function EmpresasPage() {
     setFormDialogOpen(true);
   };
 
-  const handleEditarEmpresa = (empresa: Empresa) => {
-    setSelectedEmpresa(empresa);
-    setFormDialogOpen(true);
+  const handleVerEmpresa = (cdEmpresaConsultora: number) => {
+    router.push(`/admin/0/empresas/${cdEmpresaConsultora}`);
   };
 
-  const handleCrearUsuarioAdmin = (empresa: Empresa) => {
-    setSelectedEmpresa(empresa);
-    setUsuarioDialogOpen(true);
-  };
-
-  const handleEliminarEmpresa = async (cdEmpresaConsultora: number) => {
-    if (!confirm('¿Está seguro que desea desactivar esta empresa?')) {
-      return;
-    }
-
+  const handleEliminarEmpresa = async (cdEmpresaConsultora: number, dsNombre: string) => {
     try {
       const response = await fetch(`/api/admin/empresas/${cdEmpresaConsultora}`, {
         method: 'DELETE',
@@ -140,13 +150,25 @@ export default function EmpresasPage() {
       const data = await response.json();
 
       if (data.success) {
+        toast({
+          title: 'Éxito',
+          description: `Empresa "${dsNombre}" desactivada correctamente`,
+        });
         loadData();
       } else {
-        alert(data.error || 'Error al desactivar empresa');
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: data.error || 'Error al desactivar empresa',
+        });
       }
     } catch (error) {
       console.error('Error:', error);
-      alert('Error de conexión');
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Error de conexión',
+      });
     }
   };
 
@@ -174,10 +196,20 @@ export default function EmpresasPage() {
                 <p className="text-sm text-gray-600">Super Administrador - {userName}</p>
               </div>
             </div>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Cerrar Sesión
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                onClick={() => router.push('/admin/0/config')}
+                title="Configuración"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Configuración
+              </Button>
+              <Button variant="outline" onClick={handleLogout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Cerrar Sesión
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -261,8 +293,10 @@ export default function EmpresasPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-16"></TableHead>
                       <TableHead>Empresa</TableHead>
                       <TableHead>CUIT</TableHead>
+                      <TableHead>URL</TableHead>
                       <TableHead>Contacto</TableHead>
                       <TableHead className="text-center">Usuarios</TableHead>
                       <TableHead className="text-center">Clientes</TableHead>
@@ -275,6 +309,19 @@ export default function EmpresasPage() {
                     {filteredEmpresas.map((empresa) => (
                       <TableRow key={empresa.cdEmpresaConsultora}>
                         <TableCell>
+                          {empresa.dsLogo ? (
+                            <img
+                              src={`data:image/png;base64,${empresa.dsLogo}`}
+                              alt="Logo"
+                              className="h-10 w-10 object-contain rounded"
+                            />
+                          ) : (
+                            <div className="h-10 w-10 bg-gray-200 rounded flex items-center justify-center">
+                              <Building2 className="h-5 w-5 text-gray-400" />
+                            </div>
+                          )}
+                        </TableCell>
+                        <TableCell>
                           <div>
                             <div className="font-medium">{empresa.dsNombreEmpresaConsultora}</div>
                             {empresa.dsLocalidad && (
@@ -283,6 +330,18 @@ export default function EmpresasPage() {
                           </div>
                         </TableCell>
                         <TableCell className="font-mono text-sm">{empresa.dsCUIT}</TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <a 
+                              href={`${urlBase}${empresa.cdEmpresaConsultora}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline"
+                            >
+                              {urlBase}{empresa.cdEmpresaConsultora}
+                            </a>
+                          </div>
+                        </TableCell>
                         <TableCell>
                           <div className="text-sm">
                             <div>{empresa.dsMail}</div>
@@ -306,24 +365,16 @@ export default function EmpresasPage() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => handleCrearUsuarioAdmin(empresa)}
-                              title="Crear Usuario Admin"
+                              onClick={() => handleVerEmpresa(empresa.cdEmpresaConsultora)}
+                              title="Ver Detalles"
                             >
-                              <UserPlus className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleEditarEmpresa(empresa)}
-                              title="Editar"
-                            >
-                              <Edit className="h-4 w-4" />
+                              <Eye className="h-4 w-4" />
                             </Button>
                             {empresa.cdEstado === 1 && (
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => handleEliminarEmpresa(empresa.cdEmpresaConsultora)}
+                                onClick={() => handleEliminarEmpresa(empresa.cdEmpresaConsultora, empresa.dsNombreEmpresaConsultora)}
                                 title="Desactivar"
                               >
                                 <Trash2 className="h-4 w-4 text-red-600" />
@@ -347,17 +398,6 @@ export default function EmpresasPage() {
         onOpenChange={setFormDialogOpen}
         empresa={selectedEmpresa}
         onSuccess={loadData}
-      />
-
-      <UsuarioAdminDialog
-        open={usuarioDialogOpen}
-        onOpenChange={setUsuarioDialogOpen}
-        cdEmpresaConsultora={selectedEmpresa?.cdEmpresaConsultora}
-        dsNombreEmpresa={selectedEmpresa?.dsNombreEmpresaConsultora}
-        onSuccess={() => {
-          loadData();
-          setUsuarioDialogOpen(false);
-        }}
       />
     </div>
   );

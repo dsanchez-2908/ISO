@@ -11,10 +11,9 @@ import {
   Award,
   BarChart3,
   Settings,
-  LogOut,
-  UserCircle,
   Loader2,
 } from 'lucide-react';
+import { DashboardHeader } from '@/components/layout/dashboard-header';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -137,35 +136,14 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {empresaLogo && (
-                <img
-                  src={`data:image/png;base64,${empresaLogo}`}
-                  alt="Logo"
-                  className="h-12 object-contain"
-                />
-              )}
-              <Building2 className="h-8 w-8 text-blue-600" />
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">{empresaNombre}</h1>
-                <p className="text-sm text-gray-600">
-                  <UserCircle className="inline h-4 w-4 mr-1" />
-                  {userName} - {userType === 2 ? 'Administrador' : userType === 3 ? 'Consultor' : 'Usuario'}
-                </p>
-              </div>
-            </div>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Cerrar Sesión
-            </Button>
-          </div>
-        </div>
-      </div>
+      <DashboardHeader 
+        userName={userName}
+        empresaNombre={empresaNombre}
+        tenant={tenant.toString()}
+        logoBase64={empresaLogo}
+      />
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">

@@ -29,6 +29,8 @@ import {
 import { ClienteFormDialog } from '@/components/admin/cliente-form-dialog';
 import { AsociarNormasDialog } from '@/components/admin/asociar-normas-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { DashboardHeader } from '@/components/layout/dashboard-header';
+import { Breadcrumb } from '@/components/layout/breadcrumb';
 
 interface Cliente {
   cdCliente: number;
@@ -58,6 +60,7 @@ export default function ClientesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [userName, setUserName] = useState('');
   const [empresaNombre, setEmpresaNombre] = useState('');
+  const [empresaLogo, setEmpresaLogo] = useState('');
 
   // Dialogs
   const [formDialogOpen, setFormDialogOpen] = useState(false);
@@ -112,6 +115,8 @@ export default function ClientesPage() {
       }
 
       setUserName(user.dsNombreCompleto || user.dsUsuario);
+      setEmpresaNombre(user.dsNombreEmpresaConsultora || '');
+      setEmpresaLogo(user.dsLogoEmpresa || '');
     } catch (error) {
       router.push(`/login/${tenant}`);
     }
@@ -120,13 +125,6 @@ export default function ClientesPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-
-      // Cargar empresa
-      const empresaResponse = await fetch(`/api/admin/empresas/${tenant}`);
-      const empresaData = await empresaResponse.json();
-      if (empresaData.success) {
-        setEmpresaNombre(empresaData.data.empresa.dsNombreEmpresaConsultora);
-      }
 
       // Cargar clientes
       const response = await fetch(`/api/admin/clientes?cdEmpresaConsultora=${tenant}`);
@@ -211,35 +209,29 @@ export default function ClientesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Building2 className="h-8 w-8 text-purple-600" />
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Gestión de Clientes</h1>
-                <p className="text-sm text-gray-600">
-                  {empresaNombre} - {userName}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => router.push(`/dashboard/${tenant}`)}>
-                <Building2 className="mr-2 h-4 w-4" />
-                Dashboard
-              </Button>
-              <Button variant="outline" onClick={handleLogout}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Cerrar Sesión
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <DashboardHeader 
+        userName={userName}
+        empresaNombre={empresaNombre}
+        tenant={tenant.toString()}
+        logoBase64={empresaLogo}
+      />
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-6">
+        {/* Breadcrumb */}
+        <Breadcrumb 
+          items={[
+            { label: 'Inicio', href: `/dashboard/${tenant}` },
+            { label: 'Gestión de Clientes' }
+          ]}
+        />
+
+        {/* Título */}
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">Gestión de Clientes</h1>
+          <p className="text-gray-600 mt-1">Administre las empresas cliente que audita</p>
+        </div>
         {/* Estadísticas */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <Card>
