@@ -12,6 +12,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   Table,
   TableBody,
@@ -50,6 +51,11 @@ export function RequisitosList({ cdNorma }: RequisitosListProps) {
     dsDescripcion: '',
     nuOrden: '',
   });
+
+  // Confirm Dialog
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmMessage, setConfirmMessage] = useState('');
+  const [confirmAction, setConfirmAction] = useState<() => void>(() => () => {});
 
   useEffect(() => {
     loadRequisitos();
@@ -144,36 +150,38 @@ export function RequisitosList({ cdNorma }: RequisitosListProps) {
   };
 
   const handleDelete = async (cdRequisito: number) => {
-    if (!confirm('¿Está seguro de eliminar este requisito?')) return;
-
-    try {
-      const response = await fetch(`/api/admin/requisitos/${cdRequisito}`, {
-        method: 'DELETE',
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        toast({
-          title: 'Éxito',
-          description: 'Requisito eliminado correctamente',
-          variant: 'success',
+    setConfirmMessage('¿Está seguro de eliminar este requisito?');
+    setConfirmAction(() => async () => {
+      try {
+        const response = await fetch(`/api/admin/requisitos/${cdRequisito}`, {
+          method: 'DELETE',
         });
-        loadRequisitos();
-      } else {
+
+        const data = await response.json();
+
+        if (data.success) {
+          toast({
+            title: 'Éxito',
+            description: 'Requisito eliminado correctamente',
+            variant: 'success',
+          });
+          loadRequisitos();
+        } else {
+          toast({
+            title: 'Error',
+            description: data.error || 'Error al eliminar requisito',
+            variant: 'destructive',
+          });
+        }
+      } catch (error) {
         toast({
           title: 'Error',
-          description: data.error || 'Error al eliminar requisito',
+          description: 'Error al eliminar requisito',
           variant: 'destructive',
         });
       }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Error al eliminar requisito',
-        variant: 'destructive',
-      });
-    }
+    });
+    setConfirmDialogOpen(true);
   };
 
   if (loading) {
@@ -334,6 +342,17 @@ export function RequisitosList({ cdNorma }: RequisitosListProps) {
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        onOpenChange={setConfirmDialogOpen}
+        title="Confirmar acción"
+        description={confirmMessage}
+        onConfirm={() => {
+          confirmAction();
+          setConfirmDialogOpen(false);
+        }}
+      />
     </div>
   );
 }

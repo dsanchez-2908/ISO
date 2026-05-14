@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/table';
 import { Plus, Pencil, Trash2, Award, FileCheck, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Certificacion {
   cdCertificacion: number;
@@ -77,6 +78,12 @@ export function CertificacionesList({ cdCliente, cdEmpresaConsultora }: Certific
   const [saving, setSaving] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCertificacion, setEditingCertificacion] = useState<Certificacion | null>(null);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    action: () => Promise<void>;
+    title: string;
+    description: string;
+  } | null>(null);
 
   const [formData, setFormData] = useState({
     cdNorma: '',
@@ -233,37 +240,42 @@ export function CertificacionesList({ cdCliente, cdEmpresaConsultora }: Certific
     }
   };
 
-  const handleDelete = async (cdCertificacion: number) => {
-    if (!confirm('¿Está seguro de eliminar esta certificación?')) return;
+  const handleDelete = (cdCertificacion: number) => {
+    setConfirmAction({
+      action: async () => {
+        try {
+          const response = await fetch(`/api/admin/certificaciones/${cdCertificacion}`, {
+            method: 'DELETE',
+          });
 
-    try {
-      const response = await fetch(`/api/admin/certificaciones/${cdCertificacion}`, {
-        method: 'DELETE',
-      });
+          const data = await response.json();
 
-      const data = await response.json();
-
-      if (data.success) {
-        toast({
-          title: 'Éxito',
-          description: 'Certificación eliminada correctamente',
-          variant: 'success',
-        });
-        loadCertificaciones();
-      } else {
-        toast({
-          title: 'Error',
-          description: data.error || 'Error al eliminar certificación',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Error al eliminar certificación',
-        variant: 'destructive',
-      });
-    }
+          if (data.success) {
+            toast({
+              title: 'Éxito',
+              description: 'Certificación eliminada correctamente',
+              variant: 'success',
+            });
+            loadCertificaciones();
+          } else {
+            toast({
+              title: 'Error',
+              description: data.error || 'Error al eliminar certificación',
+              variant: 'destructive',
+            });
+          }
+        } catch (error) {
+          toast({
+            title: 'Error',
+            description: 'Error al eliminar certificación',
+            variant: 'destructive',
+          });
+        }
+      },
+      title: 'Eliminar Certificación',
+      description: '¿Está seguro de eliminar esta certificación?',
+    });
+    setConfirmDialogOpen(true);
   };
 
   const handleVerDocumentos = (cdCertificacion: number) => {
@@ -538,6 +550,18 @@ export function CertificacionesList({ cdCliente, cdEmpresaConsultora }: Certific
           </form>
         </DialogContent>
       </Dialog>
+
+      {confirmAction && (
+        <ConfirmDialog
+          open={confirmDialogOpen}
+          onOpenChange={setConfirmDialogOpen}
+          onConfirm={confirmAction.action}
+          title={confirmAction.title}
+          description={confirmAction.description}
+          confirmText="Eliminar"
+          variant="destructive"
+        />
+      )}
     </div>
   );
 }

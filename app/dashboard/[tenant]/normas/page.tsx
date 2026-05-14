@@ -21,14 +21,17 @@ import {
   Edit,
   Trash2,
   Loader2,
-  LogOut,
   Building2,
   Calendar,
   Eye,
+  RefreshCw,
 } from 'lucide-react';
 import { NormaFormDialog } from '@/components/admin/norma-form-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/lib/utils';
+import { DashboardHeader } from '@/components/layout/dashboard-header';
+import { Breadcrumb } from '@/components/layout/breadcrumb';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Norma {
   cdNorma: number;
@@ -57,10 +60,18 @@ export default function NormasPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [userName, setUserName] = useState('');
   const [empresaNombre, setEmpresaNombre] = useState('');
+  const [empresaLogo, setEmpresaLogo] = useState('');
 
   // Dialogs
   const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [selectedNorma, setSelectedNorma] = useState<any>(null);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    type: 'delete' | 'reactivate';
+    cdNorma: number;
+    title: string;
+    description: string;
+  } | null>(null);
 
   useEffect(() => {
     checkAuth();
@@ -107,6 +118,7 @@ export default function NormasPage() {
       }
 
       setUserName(user.dsNombreCompleto || user.dsUsuario);
+      setEmpresaLogo(user.dsLogoEmpresa || '');
     } catch (error) {
       router.push(`/login/${tenant}`);
     }
@@ -121,6 +133,13 @@ export default function NormasPage() {
       const empresaData = await empresaResponse.json();
       if (empresaData.success) {
         setEmpresaNombre(empresaData.data.empresa.dsNombreEmpresaConsultora);
+      } else {
+        // Si falla, usar el nombre de la sesión
+        const authResponse = await fetch('/api/auth/me');
+        const authData = await authResponse.json();
+        if (authData.success) {
+          setEmpresaNombre(authData.data.user.dsNombreEmpresaConsultora || '');
+        }
       }
 
       // Cargar normas de esta empresa
@@ -138,11 +157,6 @@ export default function NormasPage() {
     }
   };
 
-  const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    router.push(`/login/${tenant}`);
-  };
-
   const handleNuevaNorma = () => {
     setSelectedNorma(null);
     setFormDialogOpen(true);
@@ -153,7 +167,7 @@ export default function NormasPage() {
     setFormDialogOpen(true);
   };
 
-  const handleEliminarNorma = async (cdNorma: number, nuClientesAsociados: number) => {
+  const handleEliminarNorma = (cdNorma: number, nuClientesAsociados: number) => {
     if (nuClientesAsociados > 0) {
       toast({
         variant: 'destructive',
@@ -163,37 +177,60 @@ export default function NormasPage() {
       return;
     }
 
-    if (!confirm('¿Está seguro que desea desactivar esta norma?')) {
-      return;
-    }
+    setConfirmAction({
+      type: 'delete',
+      cdNorma,
+      title: 'Desactivar Norma',
+      description: '¿Está seguro que desea desactivar esta norma? Podrá reactivarla más adelante.',
+    });
+    setConfirmDialogOpen(true);
+  };
+
+  const handleReactivarNorma = (cdNorma: number) => {
+    setConfirmAction({
+      type: 'reactivate',
+      cdNorma,
+      title: 'Reactivar Norma',
+      description: '¿Está seguro que desea reactivar esta norma?',
+    });
+    setConfirmDialogOpen(true);
+  };
+
+  const executeConfirmAction = async () => {
+    if (!confirmAction) return;
 
     try {
-      const response = await fetch(`/api/admin/normas/${cdNorma}`, {
-        method: 'DELETE',
-      });
+      const isDelete = confirmAction.type === 'delete';
+      const url = isDelete
+        ? `/api/admin/normas/${confirmAction.cdNorma}`
+        : `/api/admin/normas/${confirmAction.cdNorma}/reactivar`;
+      const method = isDelete ? 'DELETE' : 'POST';
 
+      const response = await fetch(url, { method });
       const data = await response.json();
 
       if (data.success) {
         loadData();
         toast({
-          title: "Norma desactivada",
-          description: "La norma se desactivó correctamente",
-          variant: "success",
+          title: isDelete ? 'Norma desactivada' : 'Norma reactivada',
+          description: isDelete
+            ? 'La norma se desactivó correctamente'
+            : 'La norma se reactivó correctamente',
+          variant: 'success',
         });
       } else {
         toast({
-          title: "Error",
-          description: data.error || 'Error al desactivar norma',
-          variant: "destructive",
+          title: 'Error',
+          description: data.error || `Error al ${isDelete ? 'desactivar' : 'reactivar'} norma`,
+          variant: 'destructive',
         });
       }
     } catch (error) {
       console.error('Error:', error);
       toast({
-        title: "Error de conexión",
-        description: "No se pudo conectar con el servidor",
-        variant: "destructive",
+        title: 'Error de conexión',
+        description: 'No se pudo conectar con el servidor',
+        variant: 'destructive',
       });
     }
   };
@@ -210,37 +247,25 @@ export default function NormasPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <FileText className="h-8 w-8 text-blue-600" />
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Gestión de Normas ISO</h1>
-                <p className="text-sm text-gray-600">
-                  {empresaNombre} - {userName}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => router.push(`/dashboard/${tenant}`)}>
-                <Building2 className="mr-2 h-4 w-4" />
-                Dashboard
-              </Button>
-              <Button variant="outline" onClick={handleLogout}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Cerrar Sesión
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <DashboardHeader
+        userName={userName}
+        empresaNombre={empresaNombre}
+        tenant={tenant.toString()}
+        logoBase64={empresaLogo}
+      />
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-6">
+        <Breadcrumb
+          items={[
+            { label: 'Inicio', href: `/dashboard/${tenant}` },
+            { label: 'Gestión de Normas' },
+          ]}
+        />
+
         {/* Estadísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 mt-6">
           <Card>
             <CardHeader className="pb-3">
               <CardDescription>Total Normas</CardDescription>
@@ -383,7 +408,7 @@ export default function NormasPage() {
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
-                            {norma.cdEstado === 1 && (
+                            {norma.cdEstado === 1 ? (
                               <Button
                                 size="sm"
                                 variant="ghost"
@@ -392,6 +417,15 @@ export default function NormasPage() {
                                 disabled={norma.nuClientesAsociados > 0}
                               >
                                 <Trash2 className={`h-4 w-4 ${norma.nuClientesAsociados > 0 ? 'text-gray-400' : 'text-red-600'}`} />
+                              </Button>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleReactivarNorma(norma.cdNorma)}
+                                title="Reactivar"
+                              >
+                                <RefreshCw className="h-4 w-4 text-green-600" />
                               </Button>
                             )}
                           </div>
@@ -414,6 +448,18 @@ export default function NormasPage() {
         cdEmpresaConsultora={tenant}
         onSuccess={loadData}
       />
+
+      {confirmAction && (
+        <ConfirmDialog
+          open={confirmDialogOpen}
+          onOpenChange={setConfirmDialogOpen}
+          onConfirm={executeConfirmAction}
+          title={confirmAction.title}
+          description={confirmAction.description}
+          confirmText={confirmAction.type === 'delete' ? 'Desactivar' : 'Reactivar'}
+          variant={confirmAction.type === 'delete' ? 'destructive' : 'default'}
+        />
+      )}
     </div>
   );
 }

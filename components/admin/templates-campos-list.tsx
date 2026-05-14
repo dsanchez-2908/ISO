@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/table';
 import { Plus, Pencil, Trash2, Check, X, Heading } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface TemplateCampo {
   cdTemplateCampo: number;
@@ -83,6 +84,12 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCampo, setEditingCampo] = useState<TemplateCampo | null>(null);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    action: () => Promise<void>;
+    title: string;
+    description: string;
+  } | null>(null);
   
   // Tipo de campo: "titulo" o "campo"
   const [tipoCampoElemento, setTipoCampoElemento] = useState<'titulo' | 'campo'>('campo');
@@ -295,37 +302,42 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
     }
   };
 
-  const handleDelete = async (cdTemplateCampo: number) => {
-    if (!confirm('¿Está seguro de eliminar este elemento?')) return;
+  const handleDelete = (cdTemplateCampo: number) => {
+    setConfirmAction({
+      action: async () => {
+        try {
+          const response = await fetch(`/api/admin/templates-campos/${cdTemplateCampo}`, {
+            method: 'DELETE',
+          });
 
-    try {
-      const response = await fetch(`/api/admin/templates-campos/${cdTemplateCampo}`, {
-        method: 'DELETE',
-      });
+          const data = await response.json();
 
-      const data = await response.json();
-
-      if (data.success) {
-        toast({
-          title: 'Éxito',
-          description: 'Elemento eliminado correctamente',
-          variant: 'success',
-        });
-        loadCampos();
-      } else {
-        toast({
-          title: 'Error',
-          description: data.error || 'Error al eliminar',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Error al eliminar',
-        variant: 'destructive',
-      });
-    }
+          if (data.success) {
+            toast({
+              title: 'Éxito',
+              description: 'Elemento eliminado correctamente',
+              variant: 'success',
+            });
+            loadCampos();
+          } else {
+            toast({
+              title: 'Error',
+              description: data.error || 'Error al eliminar',
+              variant: 'destructive',
+            });
+          }
+        } catch (error) {
+          toast({
+            title: 'Error',
+            description: 'Error al eliminar',
+            variant: 'destructive',
+          });
+        }
+      },
+      title: 'Eliminar Campo',
+      description: '¿Está seguro de eliminar este elemento?',
+    });
+    setConfirmDialogOpen(true);
   };
 
   // Cuando cambia el tipo de campo a Lista
@@ -698,10 +710,13 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
                               <SelectItem value="SECTORES">Sectores</SelectItem>
                               <SelectItem value="PUESTOS">Puestos</SelectItem>
                               <SelectItem value="EMPLEADOS">Empleados</SelectItem>
+                              <SelectItem value="LISTAS_CONFIGURADAS">Listas Configuradas</SelectItem>
                             </SelectContent>
                           </Select>
                           <p className="text-xs text-gray-500 mt-1">
-                            Los valores se cargarán automáticamente del cliente al usar el template
+                            {formData.dsEntidadCliente === 'LISTAS_CONFIGURADAS' 
+                              ? 'El usuario seleccionará la lista y valor al completar el documento'
+                              : 'Los valores se cargarán automáticamente del cliente al usar el template'}
                           </p>
                         </div>
                       )}
@@ -779,6 +794,18 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
           </form>
         </DialogContent>
       </Dialog>
+
+      {confirmAction && (
+        <ConfirmDialog
+          open={confirmDialogOpen}
+          onOpenChange={setConfirmDialogOpen}
+          onConfirm={confirmAction.action}
+          title={confirmAction.title}
+          description={confirmAction.description}
+          confirmText="Eliminar"
+          variant="destructive"
+        />
+      )}
     </div>
   );
 }

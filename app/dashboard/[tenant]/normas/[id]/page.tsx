@@ -8,6 +8,8 @@ import { ArrowLeft, FileText, ClipboardList, Building2, List } from 'lucide-reac
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RequisitosTemplates } from '@/components/admin/requisitos-templates';
 import { ListasNorma } from '@/components/admin/listas-norma';
+import { DashboardHeader } from '@/components/layout/dashboard-header';
+import { Breadcrumb } from '@/components/layout/breadcrumb';
 
 interface Norma {
   cdNorma: number;
@@ -31,10 +33,34 @@ export default function NormaDetallePage() {
 
   const [norma, setNorma] = useState<Norma | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState('');
+  const [empresaNombre, setEmpresaNombre] = useState('');
+  const [empresaLogo, setEmpresaLogo] = useState('');
 
   useEffect(() => {
+    checkAuth();
     loadNorma();
   }, [cdNorma]);
+
+  const checkAuth = async () => {
+    try {
+      const response = await fetch('/api/auth/me');
+      const data = await response.json();
+
+      if (!data.success) {
+        router.push(`/login/${tenant}`);
+        return;
+      }
+
+      const user = data.data.user;
+      setUserName(user.dsNombreCompleto || user.dsUsuario);
+      setEmpresaNombre(user.dsNombreEmpresaConsultora || '');
+      setEmpresaLogo(user.dsLogoEmpresa || '');
+    } catch (error) {
+      console.error('Error al verificar autenticación:', error);
+      router.push(`/login/${tenant}`);
+    }
+  };
 
   const loadNorma = async () => {
     try {
@@ -77,27 +103,35 @@ export default function NormaDetallePage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="mb-6">
-        <Button
-          variant="ghost"
-          onClick={() => router.push(`/dashboard/${tenant}/normas`)}
-          className="mb-4"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Volver a Normas
-        </Button>
-        
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">{norma.dsNombre}</h1>
-            <p className="text-gray-500 mt-1">
-              Código: {norma.cdCodigoNorma} • Estado: {norma.dsEstado}
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button 
+      <DashboardHeader
+        userName={userName}
+        empresaNombre={empresaNombre}
+        tenant={tenant}
+        logoBase64={empresaLogo}
+      />
+
+      <div className="container mx-auto px-4 py-6">
+        <Breadcrumb
+          items={[
+            { label: 'Inicio', href: `/dashboard/${tenant}` },
+            { label: 'Gestión de Normas', href: `/dashboard/${tenant}/normas` },
+            { label: norma.dsNombre },
+          ]}
+        />
+
+        {/* Info de la Norma */}
+        <div className="mt-6">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">{norma.dsNombre}</h1>
+              <p className="text-gray-500 mt-1">
+                Código: {norma.cdCodigoNorma} • Estado: {norma.dsEstado}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button 
               variant="outline" 
               onClick={() => router.push(`/dashboard/${tenant}/normas?edit=${cdNorma}`)}
             >
@@ -213,6 +247,7 @@ export default function NormaDetallePage() {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }

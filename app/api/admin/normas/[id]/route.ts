@@ -215,11 +215,11 @@ export async function DELETE(
       );
     }
 
-    // Desactivar norma
+    // Desactivar norma (cambiar a estado Inactivo)
     await query(
       `
       UPDATE TD_NORMAS SET
-        cdEstado = 0,
+        cdEstado = 2,
         feModificacion = GETDATE(),
         cdUsuarioModificacion = @cdUsuarioModificacion
       WHERE cdNorma = @cdNorma

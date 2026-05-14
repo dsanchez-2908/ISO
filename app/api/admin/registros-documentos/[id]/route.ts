@@ -84,6 +84,7 @@ export async function GET(
         rcv.dsValor,
         rcv.cdListaItem,
         li.dsValor as dsValorListaItem,
+        rcv.cdListaCliente,
         rcv.cdEntidadCliente,
         rcv.dsEntidadTipo
       FROM TD_TEMPLATES_CAMPOS tc
@@ -160,6 +161,45 @@ export async function PUT(
     return NextResponse.json({ success: true, data: { cdRegistroDocumento } });
   } catch (error: any) {
     console.error('Error al actualizar registro de documento:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+// DELETE /api/admin/registros-documentos/[id]
+// Elimina un registro de documento
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const token = request.cookies.get('auth-token')?.value;
+    if (!token) {
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
+    }
+
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      return NextResponse.json({ success: false, error: 'Token inválido' }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const cdRegistroDocumento = parseInt(id);
+
+    // Eliminar valores de campos asociados
+    await query(`
+      DELETE FROM TD_REGISTROS_CAMPOS_VALORES
+      WHERE cdRegistroDocumento = @cdRegistroDocumento
+    `, { cdRegistroDocumento });
+
+    // Eliminar el registro del documento
+    await query(`
+      DELETE FROM TD_REGISTROS_DOCUMENTOS
+      WHERE cdRegistroDocumento = @cdRegistroDocumento
+    `, { cdRegistroDocumento });
+
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('Error al eliminar registro de documento:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

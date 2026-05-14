@@ -27,9 +27,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Pencil, Trash2, FileText, ChevronDown, ChevronRight, Settings } from 'lucide-react';
+import { Plus, Pencil, Trash2, FileText, ChevronDown, ChevronRight, Settings, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { TemplatesCamposList } from '@/components/admin/templates-campos-list';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Template {
   cdTemplateDocumento: number;
@@ -76,6 +77,14 @@ export function TemplatesList({ cdNorma, cdRequisito }: TemplatesListProps) {
     dsVersionTemplate: '',
     dsNombreArchivo: '',
   });
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    type: 'delete' | 'reactivate';
+    cdTemplateDocumento: number;
+    cdRequisito: number;
+    title: string;
+    description: string;
+  } | null>(null);
 
   useEffect(() => {
     if (cdRequisito) {
@@ -214,34 +223,60 @@ export function TemplatesList({ cdNorma, cdRequisito }: TemplatesListProps) {
     }
   };
 
-  const handleDelete = async (cdTemplateDocumento: number, cdRequisito: number) => {
-    if (!confirm('¿Está seguro de eliminar este template?')) return;
+  const handleDelete = (cdTemplateDocumento: number, cdRequisito: number) => {
+    setConfirmAction({
+      type: 'delete',
+      cdTemplateDocumento,
+      cdRequisito,
+      title: 'Desactivar Template',
+      description: '¿Está seguro de desactivar este template? Podrá reactivarlo más adelante.',
+    });
+    setConfirmDialogOpen(true);
+  };
+
+  const handleReactivar = (cdTemplateDocumento: number, cdRequisito: number) => {
+    setConfirmAction({
+      type: 'reactivate',
+      cdTemplateDocumento,
+      cdRequisito,
+      title: 'Reactivar Template',
+      description: '¿Está seguro de reactivar este template?',
+    });
+    setConfirmDialogOpen(true);
+  };
+
+  const executeConfirmAction = async () => {
+    if (!confirmAction) return;
+
+    const { type, cdTemplateDocumento, cdRequisito } = confirmAction;
 
     try {
-      const response = await fetch(`/api/admin/templates/${cdTemplateDocumento}`, {
-        method: 'DELETE',
-      });
+      const url = type === 'delete'
+        ? `/api/admin/templates/${cdTemplateDocumento}`
+        : `/api/admin/templates/${cdTemplateDocumento}/reactivar`;
+      const method = type === 'delete' ? 'DELETE' : 'POST';
 
+      const response = await fetch(url, { method });
       const data = await response.json();
 
       if (data.success) {
         toast({
           title: 'Éxito',
-          description: 'Template eliminado correctamente',
+          description: type === 'delete' ? 'Template desactivado correctamente' : 'Template reactivado correctamente',
           variant: 'success',
         });
         loadTemplates(cdRequisito);
       } else {
         toast({
           title: 'Error',
-          description: data.error || 'Error al eliminar template',
+          description: data.error || `Error al ${type === 'delete' ? 'desactivar' : 'reactivar'} template`,
           variant: 'destructive',
         });
       }
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Error al eliminar template',
+        description: `Error al ${type === 'delete' ? 'desactivar' : 'reactivar'} template`,
         variant: 'destructive',
       });
     }
@@ -343,6 +378,19 @@ export function TemplatesList({ cdNorma, cdRequisito }: TemplatesListProps) {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de confirmación */}
+      {confirmAction && (
+        <ConfirmDialog
+          open={confirmDialogOpen}
+          onOpenChange={setConfirmDialogOpen}
+          onConfirm={executeConfirmAction}
+          title={confirmAction.title}
+          description={confirmAction.description}
+          confirmText={confirmAction.type === 'delete' ? 'Desactivar' : 'Reactivar'}
+          variant={confirmAction.type === 'delete' ? 'destructive' : 'default'}
+        />
+      )}
     </>
   );
 
@@ -419,16 +467,29 @@ export function TemplatesList({ cdNorma, cdRequisito }: TemplatesListProps) {
                         variant="ghost"
                         size="sm"
                         onClick={() => handleOpenDialog(cdRequisito, template)}
+                        title="Editar"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(template.cdTemplateDocumento, cdRequisito)}
-                      >
-                        <Trash2 className="h-4 w-4 text-red-600" />
-                      </Button>
+                      {template.snActivo ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(template.cdTemplateDocumento, cdRequisito)}
+                          title="Desactivar template"
+                        >
+                          <Trash2 className="h-4 w-4 text-red-600" />
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleReactivar(template.cdTemplateDocumento, cdRequisito)}
+                          title="Reactivar template"
+                        >
+                          <RefreshCw className="h-4 w-4 text-green-600" />
+                        </Button>
+                      )}
                     </div>
                   </TableCell>
                 </TableRow>
@@ -566,19 +627,35 @@ export function TemplatesList({ cdNorma, cdRequisito }: TemplatesListProps) {
                                 >
                                   <Pencil className="h-4 w-4" />
                                 </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() =>
-                                    handleDelete(
-                                      template.cdTemplateDocumento,
-                                      requisito.cdRequisito
-                                    )
-                                  }
-                                  title="Eliminar"
-                                >
-                                  <Trash2 className="h-4 w-4 text-red-600" />
-                                </Button>
+                                {template.snActivo ? (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleDelete(
+                                        template.cdTemplateDocumento,
+                                        requisito.cdRequisito
+                                      )
+                                    }
+                                    title="Desactivar template"
+                                  >
+                                    <Trash2 className="h-4 w-4 text-red-600" />
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() =>
+                                      handleReactivar(
+                                        template.cdTemplateDocumento,
+                                        requisito.cdRequisito
+                                      )
+                                    }
+                                    title="Reactivar template"
+                                  >
+                                    <RefreshCw className="h-4 w-4 text-green-600" />
+                                  </Button>
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>

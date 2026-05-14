@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/table';
 import { Plus, Pencil, Trash2, Loader2, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface ClientesUsuariosListProps {
   cdCliente: number;
@@ -44,6 +45,12 @@ export function ClientesUsuariosList({ cdCliente, cdEmpresaConsultora }: Cliente
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUsuario, setEditingUsuario] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    action: () => Promise<void>;
+    title: string;
+    description: string;
+  } | null>(null);
   const [formData, setFormData] = useState({
     dsApellidoNombre: '',
     cdPuesto: '',
@@ -179,38 +186,43 @@ export function ClientesUsuariosList({ cdCliente, cdEmpresaConsultora }: Cliente
     }
   };
 
-  const handleDelete = async (cdClienteUsuario: number) => {
-    if (!confirm('¿Está seguro de eliminar este empleado?')) return;
+  const handleDelete = (cdClienteUsuario: number) => {
+    setConfirmAction({
+      action: async () => {
+        try {
+          const response = await fetch(`/api/admin/clientes-usuarios/${cdClienteUsuario}`, {
+            method: 'DELETE',
+          });
 
-    try {
-      const response = await fetch(`/api/admin/clientes-usuarios/${cdClienteUsuario}`, {
-        method: 'DELETE',
-      });
+          const data = await response.json();
 
-      const data = await response.json();
-
-      if (data.success) {
-        loadUsuarios();
-        toast({
-          title: "Empleado eliminado",
-          description: "El empleado se eliminó correctamente",
-          variant: "success",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: data.error || 'Error al eliminar empleado',
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      toast({
-        title: "Error de conexión",
-        description: "No se pudo conectar con el servidor",
-        variant: "destructive",
-      });
-    }
+          if (data.success) {
+            loadUsuarios();
+            toast({
+              title: "Empleado eliminado",
+              description: "El empleado se eliminó correctamente",
+              variant: "success",
+            });
+          } else {
+            toast({
+              title: "Error",
+              description: data.error || 'Error al eliminar empleado',
+              variant: "destructive",
+            });
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          toast({
+            title: "Error de conexión",
+            description: "No se pudo conectar con el servidor",
+            variant: "destructive",
+          });
+        }
+      },
+      title: 'Eliminar Empleado',
+      description: '¿Está seguro de eliminar este empleado?',
+    });
+    setConfirmDialogOpen(true);
   };
 
   const formatDate = (dateString: string) => {
@@ -502,6 +514,18 @@ export function ClientesUsuariosList({ cdCliente, cdEmpresaConsultora }: Cliente
           </form>
         </DialogContent>
       </Dialog>
+
+      {confirmAction && (
+        <ConfirmDialog
+          open={confirmDialogOpen}
+          onOpenChange={setConfirmDialogOpen}
+          onConfirm={confirmAction.action}
+          title={confirmAction.title}
+          description={confirmAction.description}
+          confirmText="Eliminar"
+          variant="destructive"
+        />
+      )}
     </div>
   );
 }

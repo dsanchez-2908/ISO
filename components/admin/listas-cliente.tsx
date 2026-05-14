@@ -12,6 +12,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   Table,
   TableBody,
@@ -73,6 +74,11 @@ export function ListasCliente({ cdCliente, cdEmpresaConsultora }: ListasClienteP
     dsDescripcion: '',
     nuOrden: '',
   });
+
+  // Confirm Dialog
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmMessage, setConfirmMessage] = useState('');
+  const [confirmAction, setConfirmAction] = useState<() => void>(() => () => {});
 
   useEffect(() => {
     loadListas();
@@ -194,36 +200,38 @@ export function ListasCliente({ cdCliente, cdEmpresaConsultora }: ListasClienteP
   };
 
   const handleDeleteLista = async (cdLista: number) => {
-    if (!confirm('¿Está seguro de eliminar esta lista?')) return;
-
-    try {
-      const response = await fetch(`/api/admin/listas/${cdLista}`, {
-        method: 'DELETE',
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        toast({
-          title: 'Éxito',
-          description: 'Lista eliminada correctamente',
-          variant: 'success',
+    setConfirmMessage('¿Está seguro de eliminar esta lista?');
+    setConfirmAction(() => async () => {
+      try {
+        const response = await fetch(`/api/admin/listas/${cdLista}`, {
+          method: 'DELETE',
         });
-        loadListas();
-      } else {
+
+        const data = await response.json();
+
+        if (data.success) {
+          toast({
+            title: 'Éxito',
+            description: 'Lista eliminada correctamente',
+            variant: 'success',
+          });
+          loadListas();
+        } else {
+          toast({
+            title: 'Error',
+            description: data.error || 'Error al eliminar lista',
+            variant: 'destructive',
+          });
+        }
+      } catch (error) {
         toast({
           title: 'Error',
-          description: data.error || 'Error al eliminar lista',
+          description: 'Error al eliminar lista',
           variant: 'destructive',
         });
       }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Error al eliminar lista',
-        variant: 'destructive',
-      });
-    }
+    });
+    setConfirmDialogOpen(true);
   };
 
   // === CRUD de Items ===
@@ -299,37 +307,39 @@ export function ListasCliente({ cdCliente, cdEmpresaConsultora }: ListasClienteP
   };
 
   const handleDeleteItem = async (cdListaItem: number, cdLista: number) => {
-    if (!confirm('¿Está seguro de eliminar este item?')) return;
-
-    try {
-      const response = await fetch(`/api/admin/listas-items/${cdListaItem}`, {
-        method: 'DELETE',
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        toast({
-          title: 'Éxito',
-          description: 'Item eliminado correctamente',
-          variant: 'success',
+    setConfirmMessage('¿Está seguro de eliminar este item?');
+    setConfirmAction(() => async () => {
+      try {
+        const response = await fetch(`/api/admin/listas-items/${cdListaItem}`, {
+          method: 'DELETE',
         });
-        loadItems(cdLista);
-        loadListas(); // Para actualizar el contador
-      } else {
+
+        const data = await response.json();
+
+        if (data.success) {
+          toast({
+            title: 'Éxito',
+            description: 'Item eliminado correctamente',
+            variant: 'success',
+          });
+          loadItems(cdLista);
+          loadListas(); // Para actualizar el contador
+        } else {
+          toast({
+            title: 'Error',
+            description: data.error || 'Error al eliminar item',
+            variant: 'destructive',
+          });
+        }
+      } catch (error) {
         toast({
           title: 'Error',
-          description: data.error || 'Error al eliminar item',
+          description: 'Error al eliminar item',
           variant: 'destructive',
         });
       }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Error al eliminar item',
-        variant: 'destructive',
-      });
-    }
+    });
+    setConfirmDialogOpen(true);
   };
 
   if (loading) {
@@ -615,6 +625,17 @@ export function ListasCliente({ cdCliente, cdEmpresaConsultora }: ListasClienteP
           </form>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        onOpenChange={setConfirmDialogOpen}
+        title="Confirmar acción"
+        description={confirmMessage}
+        onConfirm={() => {
+          confirmAction();
+          setConfirmDialogOpen(false);
+        }}
+      />
     </div>
   );
 }

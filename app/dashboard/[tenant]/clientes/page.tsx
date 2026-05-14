@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { ClienteFormDialog } from '@/components/admin/cliente-form-dialog';
 import { AsociarNormasDialog } from '@/components/admin/asociar-normas-dialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { DashboardHeader } from '@/components/layout/dashboard-header';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
@@ -66,6 +67,13 @@ export default function ClientesPage() {
   const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [normasDialogOpen, setNormasDialogOpen] = useState(false);
   const [selectedCliente, setSelectedCliente] = useState<any>(null);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    type: 'delete';
+    id: number;
+    title: string;
+    description: string;
+  } | null>(null);
 
   useEffect(() => {
     checkAuth();
@@ -161,13 +169,21 @@ export default function ClientesPage() {
     setNormasDialogOpen(true);
   };
 
-  const handleEliminarCliente = async (cdCliente: number) => {
-    if (!confirm('¿Está seguro que desea desactivar este cliente?')) {
-      return;
-    }
+  const handleEliminarCliente = (cdCliente: number) => {
+    setConfirmAction({
+      type: 'delete',
+      id: cdCliente,
+      title: '¿Desactivar cliente?',
+      description: 'Esta acción desactivará el cliente. Podrá reactivarlo más tarde si es necesario.',
+    });
+    setConfirmDialogOpen(true);
+  };
+
+  const executeConfirmAction = async () => {
+    if (!confirmAction) return;
 
     try {
-      const response = await fetch(`/api/admin/clientes/${cdCliente}`, {
+      const response = await fetch(`/api/admin/clientes/${confirmAction.id}`, {
         method: 'DELETE',
       });
 
@@ -194,6 +210,9 @@ export default function ClientesPage() {
         description: "No se pudo conectar con el servidor",
         variant: "destructive",
       });
+    } finally {
+      setConfirmDialogOpen(false);
+      setConfirmAction(null);
     }
   };
 
@@ -430,6 +449,18 @@ export default function ClientesPage() {
           clienteId={selectedCliente.cdCliente}
           clienteNombre={selectedCliente.dsRazonSocial}
           onSuccess={loadData}
+        />
+      )}
+
+      {confirmAction && (
+        <ConfirmDialog
+          open={confirmDialogOpen}
+          onOpenChange={setConfirmDialogOpen}
+          onConfirm={executeConfirmAction}
+          title={confirmAction.title}
+          description={confirmAction.description}
+          confirmText="Desactivar"
+          variant="destructive"
         />
       )}
     </div>

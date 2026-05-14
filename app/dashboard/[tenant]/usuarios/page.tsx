@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { UsuarioFormDialog } from '@/components/admin/usuario-form-dialog';
 import { CambiarPasswordDialog } from '@/components/admin/cambiar-password-dialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/lib/utils';
 
@@ -79,6 +80,13 @@ export default function UsuariosPage() {
   const [formDialogOpen, setFormDialogOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [selectedUsuario, setSelectedUsuario] = useState<any>(null);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    type: 'delete';
+    id: number;
+    title: string;
+    description: string;
+  } | null>(null);
 
   useEffect(() => {
     checkAuth();
@@ -207,13 +215,21 @@ export default function UsuariosPage() {
     setPasswordDialogOpen(true);
   };
 
-  const handleEliminarUsuario = async (cdUsuario: number) => {
-    if (!confirm('¿Está seguro que desea desactivar este usuario?')) {
-      return;
-    }
+  const handleEliminarUsuario = (cdUsuario: number) => {
+    setConfirmAction({
+      type: 'delete',
+      id: cdUsuario,
+      title: '¿Desactivar usuario?',
+      description: 'Esta acción desactivará el usuario. Podrá reactivarlo más tarde si es necesario.',
+    });
+    setConfirmDialogOpen(true);
+  };
+
+  const executeConfirmAction = async () => {
+    if (!confirmAction) return;
 
     try {
-      const response = await fetch(`/api/admin/usuarios/${cdUsuario}`, {
+      const response = await fetch(`/api/admin/usuarios/${confirmAction.id}`, {
         method: 'DELETE',
       });
 
@@ -240,6 +256,9 @@ export default function UsuariosPage() {
         description: "No se pudo conectar con el servidor",
         variant: "destructive",
       });
+    } finally {
+      setConfirmDialogOpen(false);
+      setConfirmAction(null);
     }
   };
 
@@ -481,6 +500,18 @@ export default function UsuariosPage() {
         usuario={selectedUsuario}
         onSuccess={loadData}
       />
+
+      {confirmAction && (
+        <ConfirmDialog
+          open={confirmDialogOpen}
+          onOpenChange={setConfirmDialogOpen}
+          onConfirm={executeConfirmAction}
+          title={confirmAction.title}
+          description={confirmAction.description}
+          confirmText="Desactivar"
+          variant="destructive"
+        />
+      )}
     </div>
   );
 }

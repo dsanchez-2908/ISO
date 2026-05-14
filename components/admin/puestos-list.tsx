@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/table';
 import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface PuestosListProps {
   cdCliente: number;
@@ -36,6 +37,12 @@ export function PuestosList({ cdCliente, cdEmpresaConsultora }: PuestosListProps
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPuesto, setEditingPuesto] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    action: () => Promise<void>;
+    title: string;
+    description: string;
+  } | null>(null);
   const [formData, setFormData] = useState({
     dsPuesto: '',
     dsDescripcion: '',
@@ -127,38 +134,43 @@ export function PuestosList({ cdCliente, cdEmpresaConsultora }: PuestosListProps
     }
   };
 
-  const handleDelete = async (cdPuesto: number) => {
-    if (!confirm('¿Está seguro de eliminar este puesto?')) return;
+  const handleDelete = (cdPuesto: number) => {
+    setConfirmAction({
+      action: async () => {
+        try {
+          const response = await fetch(`/api/admin/puestos/${cdPuesto}`, {
+            method: 'DELETE',
+          });
 
-    try {
-      const response = await fetch(`/api/admin/puestos/${cdPuesto}`, {
-        method: 'DELETE',
-      });
+          const data = await response.json();
 
-      const data = await response.json();
-
-      if (data.success) {
-        loadPuestos();
-        toast({
-          title: "Puesto eliminado",
-          description: "El puesto se eliminó correctamente",
-          variant: "success",
-        });
-      } else {
-        toast({
-          title: "Error",
-          description: data.error || 'Error al eliminar puesto',
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      toast({
-        title: "Error de conexión",
-        description: "No se pudo conectar con el servidor",
-        variant: "destructive",
-      });
-    }
+          if (data.success) {
+            loadPuestos();
+            toast({
+              title: "Puesto eliminado",
+              description: "El puesto se eliminó correctamente",
+              variant: "success",
+            });
+          } else {
+            toast({
+              title: "Error",
+              description: data.error || 'Error al eliminar puesto',
+              variant: "destructive",
+            });
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          toast({
+            title: "Error de conexión",
+            description: "No se pudo conectar con el servidor",
+            variant: "destructive",
+          });
+        }
+      },
+      title: 'Eliminar Puesto',
+      description: '¿Está seguro de eliminar este puesto?',
+    });
+    setConfirmDialogOpen(true);
   };
 
   if (loading) {
@@ -288,6 +300,18 @@ export function PuestosList({ cdCliente, cdEmpresaConsultora }: PuestosListProps
           </form>
         </DialogContent>
       </Dialog>
+
+      {confirmAction && (
+        <ConfirmDialog
+          open={confirmDialogOpen}
+          onOpenChange={setConfirmDialogOpen}
+          onConfirm={confirmAction.action}
+          title={confirmAction.title}
+          description={confirmAction.description}
+          confirmText="Eliminar"
+          variant="destructive"
+        />
+      )}
     </div>
   );
 }

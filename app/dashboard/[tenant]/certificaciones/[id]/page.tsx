@@ -2,6 +2,22 @@
 
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { DashboardHeader } from '@/components/layout/dashboard-header';
+import { Breadcrumb } from '@/components/layout/breadcrumb';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { Trash2 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 
 interface Certificacion {
   cdCertificacion: number;
@@ -55,6 +71,7 @@ interface Registro {
 export default function CertificacionPage() {
   const params = useParams();
   const router = useRouter();
+  const { toast } = useToast();
   const tenant = params.tenant as string;
   const cdCertificacion = parseInt(params.id as string);
 
@@ -65,11 +82,44 @@ export default function CertificacionPage() {
   const [templates, setTemplates] = useState<{ [key: number]: Template[] }>({});
   const [expandedTemplate, setExpandedTemplate] = useState<number | null>(null);
   const [registros, setRegistros] = useState<{ [key: number]: Registro[] }>({});
+  const [userName, setUserName] = useState('');
+  const [empresaNombre, setEmpresaNombre] = useState('');
+  const [empresaLogo, setEmpresaLogo] = useState('');
+  
+  // Dialog para agregar registro
+  const [agregarDialogOpen, setAgregarDialogOpen] = useState(false);
+  const [nuevoRegistroTitulo, setNuevoRegistroTitulo] = useState('');
+  const [templateSeleccionado, setTemplateSeleccionado] = useState<Template | null>(null);
+  const [requisitoSeleccionado, setRequisitoSeleccionado] = useState<Requisito | null>(null);
+  
+  // Dialog para confirmar eliminación
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    action: () => Promise<void>;
+    title: string;
+    description: string;
+  } | null>(null);
 
   useEffect(() => {
+    checkAuth();
     loadCertificacion();
     loadRequisitos();
   }, [cdCertificacion]);
+
+  const checkAuth = async () => {
+    try {
+      const res = await fetch('/api/auth/me');
+      const data = await res.json();
+      if (data.success) {
+        const user = data.data.user;
+        setUserName(user.dsNombreCompleto || user.dsUsuario);
+        setEmpresaNombre(user.dsNombreEmpresaConsultora || '');
+        setEmpresaLogo(user.dsLogoEmpresa || '');
+      }
+    } catch (error) {
+      console.error('Error al verificar autenticación:', error);
+    }
+  };
 
   const loadCertificacion = async () => {
     try {
@@ -153,27 +203,98 @@ export default function CertificacionPage() {
   };
 
   const handleAgregarRegistro = async (template: Template, requisito: Requisito) => {
+    setTemplateSeleccionado(template);
+    setRequisitoSeleccionado(requisito);
+    setNuevoRegistroTitulo('');
+    setAgregarDialogOpen(true);
+  };
+
+  const confirmarAgregarRegistro = async () => {
+    if (!nuevoRegistroTitulo.trim()) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'El título del registro es requerido',
+      });
+      return;
+    }
+
+    if (!templateSeleccionado || !requisitoSeleccionado) return;
+
     try {
       const res = await fetch('/api/admin/registros-documentos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           cdCertificacion,
-          cdTemplateDocumento: template.cdTemplateDocumento,
-          cdRequisito: requisito.cdRequisito,
-          dsCodigoDocumento: `${requisito.cdCodigoRequisito}-${Date.now()}`,
-          dsNombreDocumento: template.dsNombre
+          cdTemplateDocumento: templateSeleccionado.cdTemplateDocumento,
+          cdRequisito: requisitoSeleccionado.cdRequisito,
+          dsCodigoDocumento: `${requisitoSeleccionado.cdCodigoRequisito}-${Date.now()}`,
+          dsNombreDocumento: nuevoRegistroTitulo
         })
       });
 
       const data = await res.json();
       if (data.success) {
-        // Recargar registros
-        await loadRegistros(template.cdTemplateDocumento);
-        await loadRequisitos(); // Actualizar contadores
+        toast({
+          title: 'Éxito',
+          description: 'Registro creado correctamente',
+        });
+        setAgregarDialogOpen(false);
+        await loadRegistros(templateSeleccionado.cdTemplateDocumento);
+        await loadRequisitos();
+      } else {
+        throw new Error(data.error);
       }
-    } catch (error) {
-      console.error('Error al agregar registro:', error);
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'No se pudo crear el registro',
+      });
+    }
+  };
+
+  const handleEliminarRegistro = async (cdRegistroDocumento: number, nombreRegistro: string) => {
+    setConfirmAction({
+      action: async () => {
+        try {
+          const res = await fetch(`/api/admin/registros-documentos/${cdRegistroDocumento}`, {
+            method: 'DELETE',
+          });
+          const data = await res.json();
+          if (data.success) {
+            toast({
+              title: 'Éxito',
+              description: 'Registro eliminado correctamente',
+            });
+            // Recargar registros de todos los templates expandidos
+            if (expandedTemplate) {
+              await loadRegistros(expandedTemplate);
+            }
+            await loadRequisitos();
+          } else {
+            throw new Error(data.error);
+          }
+        } catch (error: any) {
+          toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: error.message || 'No se pudo eliminar el registro',
+          });
+        }
+      },
+      title: 'Eliminar registro',
+      description: `¿Está seguro que desea eliminar el registro "${nombreRegistro}"? Esta acción no se puede deshacer.`,
+    });
+    setConfirmDialogOpen(true);
+  };
+
+  const executeConfirmAction = async () => {
+    if (confirmAction) {
+      await confirmAction.action();
+      setConfirmDialogOpen(false);
+      setConfirmAction(null);
     }
   };
 
@@ -186,21 +307,30 @@ export default function CertificacionPage() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
-          <button
-            onClick={() => router.back()}
-            className="hover:text-gray-900"
-          >
-            ← Volver
-          </button>
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      <DashboardHeader
+        empresaNombre={empresaNombre}
+        logoBase64={empresaLogo}
+        userName={userName}
+        tenant={tenant}
+      />
+      
+      <div className="p-6 max-w-7xl mx-auto">
+        <Breadcrumb
+          items={[
+            { label: 'Inicio', href: `/dashboard/${tenant}` },
+            { label: 'Gestión de Clientes', href: `/dashboard/${tenant}/clientes` },
+            ...(certificacion ? [
+              { label: `Detalle del Cliente: ${certificacion.dsNombreCliente}`, href: `/dashboard/${tenant}/clientes/${certificacion.cdCliente}` },
+              { label: 'Certificaciones', href: `/dashboard/${tenant}/clientes/${certificacion.cdCliente}#certificaciones` },
+              { label: certificacion.dsNombreNorma },
+            ] : []),
+          ]}
+        />
         
         {certificacion && (
-          <>
-            <h1 className="text-3xl font-bold mb-2">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+            <h1 className="text-3xl font-bold mb-4">
               Certificación: {certificacion.dsNombreNorma}
             </h1>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-lg">
@@ -221,13 +351,12 @@ export default function CertificacionPage() {
                 <div className="font-medium">{certificacion.dsAuditor || '-'}</div>
               </div>
             </div>
-          </>
+          </div>
         )}
-      </div>
 
-      {/* Requisitos */}
-      <div className="space-y-2">
-        <h2 className="text-xl font-semibold mb-4">Requisitos de la Norma</h2>
+        {/* Requisitos */}
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold mb-4">Requisitos de la Norma</h2>
         
         {requisitos.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
@@ -272,7 +401,7 @@ export default function CertificacionPage() {
                             >
                               <span className="text-lg">{expandedTemplate === template.cdTemplateDocumento ? '▼' : '▶'}</span>
                               <div>
-                                <div className="font-medium">{template.dsNombre}</div>
+                                <div className="font-medium">Template: {template.dsNombre}</div>
                                 <div className="text-sm text-gray-600">
                                   {template.nuTotalCampos} campos | {template.nuTotalRegistros} registros
                                 </div>
@@ -308,12 +437,21 @@ export default function CertificacionPage() {
                                           Campos: {registro.nuCamposCompletos}/{registro.nuCamposTotal}
                                         </div>
                                       </div>
-                                      <button
-                                        onClick={() => handleEditarRegistro(registro.cdRegistroDocumento)}
-                                        className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700"
-                                      >
-                                        Completar
-                                      </button>
+                                      <div className="flex gap-2">
+                                        <button
+                                          onClick={() => handleEditarRegistro(registro.cdRegistroDocumento)}
+                                          className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700"
+                                        >
+                                          Completar
+                                        </button>
+                                        <button
+                                          onClick={() => handleEliminarRegistro(registro.cdRegistroDocumento, registro.dsNombreDocumento)}
+                                          className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+                                          title="Eliminar registro"
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </button>
+                                      </div>
                                     </div>
                                   ))}
                                 </div>
@@ -337,7 +475,52 @@ export default function CertificacionPage() {
             </div>
           ))
         )}
+        </div>
       </div>
+
+      {/* Dialog para agregar registro */}
+      <Dialog open={agregarDialogOpen} onOpenChange={setAgregarDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Agregar Nuevo Registro</DialogTitle>
+            <DialogDescription>
+              {templateSeleccionado && requisitoSeleccionado && (
+                <span>
+                  Template: <strong>{templateSeleccionado.dsNombre}</strong> | Requisito: <strong>{requisitoSeleccionado.dsRequisito}</strong>
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label htmlFor="titulo">Título del Registro *</Label>
+            <Input
+              id="titulo"
+              value={nuevoRegistroTitulo}
+              onChange={(e) => setNuevoRegistroTitulo(e.target.value)}
+              placeholder="Ingrese el título del registro"
+              className="mt-2"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAgregarDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={confirmarAgregarRegistro}>
+              Crear Registro
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de confirmación para eliminar */}
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        onOpenChange={setConfirmDialogOpen}
+        onConfirm={executeConfirmAction}
+        title={confirmAction?.title || ''}
+        description={confirmAction?.description || ''}
+        variant="destructive"
+      />
     </div>
   );
 }

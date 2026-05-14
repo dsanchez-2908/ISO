@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, Pencil, Trash2, ChevronDown, ChevronRight, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
@@ -15,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { TemplatesList } from '@/components/admin/templates-list';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Requisito {
   cdRequisito: number;
@@ -44,6 +45,13 @@ export function RequisitosTemplates({ cdNorma }: RequisitosTemplatesProps) {
     dsDescripcion: '',
     nuOrden: '',
   });
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<{
+    type: 'delete' | 'reactivate';
+    cdRequisito: number;
+    title: string;
+    description: string;
+  } | null>(null);
 
   useEffect(() => {
     loadRequisitos();
@@ -129,20 +137,44 @@ export function RequisitosTemplates({ cdNorma }: RequisitosTemplatesProps) {
     }
   };
 
-  const handleDelete = async (cdRequisito: number) => {
-    if (!confirm('¿Está seguro de eliminar este requisito?')) return;
+  const handleDelete = (cdRequisito: number) => {
+    setConfirmAction({
+      type: 'delete',
+      cdRequisito,
+      title: 'Desactivar Requisito',
+      description: '¿Está seguro de desactivar este requisito? Podrá reactivarlo más adelante.',
+    });
+    setConfirmDialogOpen(true);
+  };
+
+  const handleReactivar = (cdRequisito: number) => {
+    setConfirmAction({
+      type: 'reactivate',
+      cdRequisito,
+      title: 'Reactivar Requisito',
+      description: '¿Está seguro de reactivar este requisito?',
+    });
+    setConfirmDialogOpen(true);
+  };
+
+  const executeConfirmAction = async () => {
+    if (!confirmAction) return;
+
+    const { type, cdRequisito } = confirmAction;
 
     try {
-      const response = await fetch(`/api/admin/requisitos/${cdRequisito}`, {
-        method: 'DELETE',
-      });
+      const url = type === 'delete'
+        ? `/api/admin/requisitos/${cdRequisito}`
+        : `/api/admin/requisitos/${cdRequisito}/reactivar`;
+      const method = type === 'delete' ? 'DELETE' : 'POST';
 
+      const response = await fetch(url, { method });
       const data = await response.json();
 
       if (data.success) {
         toast({
           title: 'Éxito',
-          description: 'Requisito eliminado',
+          description: type === 'delete' ? 'Requisito desactivado' : 'Requisito reactivado',
           variant: 'success',
         });
         loadRequisitos();
@@ -200,8 +232,19 @@ export function RequisitosTemplates({ cdNorma }: RequisitosTemplatesProps) {
                     <ChevronRight className="h-5 w-5" />
                   )}
                   <div>
-                    <div className="font-semibold">
-                      {requisito.cdCodigoRequisito} - {requisito.dsRequisito}
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">
+                        {requisito.cdCodigoRequisito} - {requisito.dsRequisito}
+                      </span>
+                      <span
+                        className={`px-2 py-0.5 rounded text-xs ${
+                          requisito.cdEstado === 1
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {requisito.dsEstado}
+                      </span>
                     </div>
                     {requisito.dsDescripcion && (
                       <div className="text-sm text-gray-600 line-clamp-1">
@@ -219,13 +262,25 @@ export function RequisitosTemplates({ cdNorma }: RequisitosTemplatesProps) {
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(requisito.cdRequisito)}
-                  >
-                    <Trash2 className="h-4 w-4 text-red-600" />
-                  </Button>
+                  {requisito.cdEstado === 1 ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(requisito.cdRequisito)}
+                      title="Desactivar requisito"
+                    >
+                      <Trash2 className="h-4 w-4 text-red-600" />
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleReactivar(requisito.cdRequisito)}
+                      title="Reactivar requisito"
+                    >
+                      <RefreshCw className="h-4 w-4 text-green-600" />
+                    </Button>
+                  )}
                 </div>
               </div>
 
@@ -328,6 +383,19 @@ export function RequisitosTemplates({ cdNorma }: RequisitosTemplatesProps) {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog de confirmación */}
+      {confirmAction && (
+        <ConfirmDialog
+          open={confirmDialogOpen}
+          onOpenChange={setConfirmDialogOpen}
+          onConfirm={executeConfirmAction}
+          title={confirmAction.title}
+          description={confirmAction.description}
+          confirmText={confirmAction.type === 'delete' ? 'Desactivar' : 'Reactivar'}
+          variant={confirmAction.type === 'delete' ? 'destructive' : 'default'}
+        />
+      )}
     </div>
   );
 }

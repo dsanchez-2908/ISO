@@ -22,7 +22,7 @@ export async function PUT(
     const { id } = await params;
     const cdRegistroDocumento = parseInt(id);
     const body = await request.json();
-    const { campos } = body; // Array de { cdRegistroCampoValor, dsValor, cdListaItem, cdEntidadCliente, dsEntidadTipo }
+    const { campos } = body; // Array de { cdRegistroCampoValor, dsValor, cdListaItem, cdListaCliente, cdEntidadCliente, dsEntidadTipo }
 
     if (!Array.isArray(campos)) {
       return NextResponse.json(
@@ -37,6 +37,7 @@ export async function PUT(
         cdRegistroCampoValor,
         dsValor,
         cdListaItem,
+        cdListaCliente,
         cdEntidadCliente,
         dsEntidadTipo
       } = campo;
@@ -46,6 +47,7 @@ export async function PUT(
           UPDATE TD_REGISTROS_CAMPOS_VALORES
           SET dsValor = @dsValor,
               cdListaItem = @cdListaItem,
+              cdListaCliente = @cdListaCliente,
               cdEntidadCliente = @cdEntidadCliente,
               dsEntidadTipo = @dsEntidadTipo,
               feModificacion = GETDATE(),
@@ -55,6 +57,7 @@ export async function PUT(
           cdRegistroCampoValor,
           dsValor: dsValor || null,
           cdListaItem: cdListaItem || null,
+          cdListaCliente: cdListaCliente || null,
           cdEntidadCliente: cdEntidadCliente || null,
           dsEntidadTipo: dsEntidadTipo || null,
           cdUsuarioModificacion: decoded.cdUsuario
