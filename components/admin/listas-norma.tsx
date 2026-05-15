@@ -12,17 +12,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Plus, Pencil, Trash2, ChevronDown, ChevronRight, List } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Pencil, List as ListIcon, Eye, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
+import { ListaItemsModal } from '@/components/admin/lista-items-modal';
 
 interface Lista {
   cdLista: number;
@@ -53,8 +47,6 @@ interface ListasNormaProps {
 export function ListasNorma({ cdNorma, cdEmpresaConsultora }: ListasNormaProps) {
   const { toast } = useToast();
   const [listas, setListas] = useState<Lista[]>([]);
-  const [items, setItems] = useState<{ [key: number]: ListaItem[] }>({});
-  const [expandedListas, setExpandedListas] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{
@@ -71,15 +63,9 @@ export function ListasNorma({ cdNorma, cdEmpresaConsultora }: ListasNormaProps) 
     dsDescripcion: '',
   });
 
-  // Dialogs para Items
-  const [itemDialogOpen, setItemDialogOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<ListaItem | null>(null);
-  const [selectedListaForItem, setSelectedListaForItem] = useState<number | null>(null);
-  const [itemFormData, setItemFormData] = useState({
-    dsValor: '',
-    dsDescripcion: '',
-    nuOrden: '',
-  });
+  // Modal para gestionar items
+  const [itemsModalOpen, setItemsModalOpen] = useState(false);
+  const [selectedListaForItems, setSelectedListaForItems] = useState<Lista | null>(null);
 
   useEffect(() => {
     loadListas();
@@ -104,33 +90,59 @@ export function ListasNorma({ cdNorma, cdEmpresaConsultora }: ListasNormaProps) 
     }
   };
 
-  const loadItems = async (cdLista: number) => {
-    try {
-      const response = await fetch(`/api/admin/listas-items?cdLista=${cdLista}`);
-      const data = await response.json();
-      if (data.success) {
-        setItems((prev) => ({ ...prev, [cdLista]: data.data }));
-      }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Error al cargar items',
-        variant: 'destructive',
-      });
-    }
+  const handleOpenItemsModal = (lista: Lista) => {
+    setSelectedListaForItems(lista);
+    setItemsModalOpen(true);
   };
 
-  const toggleLista = (cdLista: number) => {
-    const newExpanded = new Set(expandedListas);
-    if (newExpanded.has(cdLista)) {
-      newExpanded.delete(cdLista);
-    } else {
-      newExpanded.add(cdLista);
-      if (!items[cdLista]) {
-        loadItems(cdLista);
-      }
+  const handleToggleEstadoLista = async (lista: Lista) => {
+    const nuevoEstado = lista.cdEstado === 1 ? 2 : 1;
+    const accion = nuevoEstado === 1 ? 'activar' : 'desactivar';
+
+    setConfirmAction({
+      action: async () => {
+        try {
+          const response = await fetch(`/api/admin/listas/${lista.cdLista}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              dsNombreLista: lista.dsNombreLista,
+              dsDescripcion: lista.dsDescripcion,
+              cdEstado: nuevoEstado,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            toast({
+              title: 'Éxito',
+              description: `Lista ${accion === 'activar' ? 'activada' : 'desactivada'} correctamente`,
+            });
+            loadListas();
+          } else {
+            throw new Error(data.error);
+          }
+        } catch (error: any) {
+          toast({
+            title: 'Error',
+            description: error.message || `Error al ${accion} lista`,
+            variant: 'destructive',
+          });
+        }
+      },
+      title: `${accion.charAt(0).toUpperCase() + accion.slice(1)} lista`,
+      description: `¿Está seguro que desea ${accion} la lista "${lista.dsNombreLista}"?`,
+    });
+    setConfirmDialogOpen(true);
+  };
+
+  const executeConfirmAction = async () => {
+    if (confirmAction) {
+      await confirmAction.action();
+      setConfirmDialogOpen(false);
+      setConfirmAction(null);
     }
-    setExpandedListas(newExpanded);
   };
 
   // === CRUD de Listas ===
@@ -200,155 +212,6 @@ export function ListasNorma({ cdNorma, cdEmpresaConsultora }: ListasNormaProps) 
     }
   };
 
-  const handleDeleteLista = (cdLista: number) => {
-    setConfirmAction({
-      action: async () => {
-        try {
-          const response = await fetch(`/api/admin/listas/${cdLista}`, {
-            method: 'DELETE',
-          });
-
-          const data = await response.json();
-
-          if (data.success) {
-            toast({
-              title: 'Éxito',
-              description: 'Lista eliminada correctamente',
-              variant: 'success',
-            });
-            loadListas();
-          } else {
-            toast({
-              title: 'Error',
-              description: data.error || 'Error al eliminar lista',
-              variant: 'destructive',
-            });
-          }
-        } catch (error) {
-          toast({
-            title: 'Error',
-            description: 'Error al eliminar lista',
-            variant: 'destructive',
-          });
-        }
-      },
-      title: 'Eliminar Lista',
-      description: '¿Está seguro de eliminar esta lista?',
-    });
-    setConfirmDialogOpen(true);
-  };
-
-  // === CRUD de Items ===
-  const handleOpenItemDialog = (cdLista: number, item?: ListaItem) => {
-    setSelectedListaForItem(cdLista);
-    if (item) {
-      setEditingItem(item);
-      setItemFormData({
-        dsValor: item.dsValor,
-        dsDescripcion: item.dsDescripcion || '',
-        nuOrden: item.nuOrden.toString(),
-      });
-    } else {
-      setEditingItem(null);
-      setItemFormData({
-        dsValor: '',
-        dsDescripcion: '',
-        nuOrden: '',
-      });
-    }
-    setItemDialogOpen(true);
-  };
-
-  const handleSubmitItem = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!selectedListaForItem) return;
-
-    try {
-      const url = editingItem
-        ? `/api/admin/listas-items/${editingItem.cdListaItem}`
-        : '/api/admin/listas-items';
-
-      const method = editingItem ? 'PUT' : 'POST';
-
-      const payload = {
-        ...itemFormData,
-        cdLista: selectedListaForItem,
-        snActivo: editingItem?.snActivo !== undefined ? editingItem.snActivo : true,
-      };
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        toast({
-          title: 'Éxito',
-          description: `Item ${editingItem ? 'actualizado' : 'creado'} correctamente`,
-          variant: 'success',
-        });
-        setItemDialogOpen(false);
-        loadItems(selectedListaForItem);
-        loadListas(); // Para actualizar el contador de items
-      } else {
-        toast({
-          title: 'Error',
-          description: data.error || 'Error al guardar item',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Error al guardar item',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleDeleteItem = (cdListaItem: number, cdLista: number) => {
-    setConfirmAction({
-      action: async () => {
-        try {
-          const response = await fetch(`/api/admin/listas-items/${cdListaItem}`, {
-            method: 'DELETE',
-          });
-
-          const data = await response.json();
-
-          if (data.success) {
-            toast({
-              title: 'Éxito',
-              description: 'Item eliminado correctamente',
-              variant: 'success',
-            });
-            loadItems(cdLista);
-            loadListas(); // Para actualizar el contador
-          } else {
-            toast({
-              title: 'Error',
-              description: data.error || 'Error al eliminar item',
-              variant: 'destructive',
-            });
-          }
-        } catch (error) {
-          toast({
-            title: 'Error',
-            description: 'Error al eliminar item',
-            variant: 'destructive',
-          });
-        }
-      },
-      title: 'Eliminar Item',
-      description: '¿Está seguro de eliminar este item?',
-    });
-    setConfirmDialogOpen(true);
-  };
-
   if (loading) {
     return <div className="text-center py-4">Cargando listas...</div>;
   }
@@ -364,138 +227,72 @@ export function ListasNorma({ cdNorma, cdEmpresaConsultora }: ListasNormaProps) 
       </div>
 
       {listas.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
-          <List className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+        <div className="text-center py-8 text-gray-500\">
+          <ListIcon className="h-12 w-12 mx-auto mb-2 text-gray-300" />
           <p>No hay listas definidas para esta norma</p>
           <p className="text-sm mt-2">Las listas permiten definir valores fijos para campos de tipo Lista</p>
         </div>
       ) : (
         <div className="space-y-2">
-          {listas.map((lista) => {
-            const isExpanded = expandedListas.has(lista.cdLista);
-            const listaItems = items[lista.cdLista] || [];
-
-            return (
-              <div key={lista.cdLista} className="border rounded-lg overflow-hidden">
-                {/* Header de la Lista */}
-                <div
-                  className="flex items-center justify-between p-4 bg-gray-50 cursor-pointer hover:bg-gray-100"
-                  onClick={() => toggleLista(lista.cdLista)}
-                >
-                  <div className="flex items-center gap-3">
-                    {isExpanded ? (
-                      <ChevronDown className="h-5 w-5 text-gray-500" />
-                    ) : (
-                      <ChevronRight className="h-5 w-5 text-gray-500" />
-                    )}
-                    <div>
+          {listas.map((lista) => (
+            <div key={lista.cdLista} className="border rounded-lg overflow-hidden bg-white">
+              <div className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
                       <p className="font-medium">{lista.dsNombreLista}</p>
-                      {lista.dsDescripcion && (
-                        <p className="text-sm text-gray-500">{lista.dsDescripcion}</p>
+                      {lista.cdEstado === 1 ? (
+                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                          <Check className="h-3 w-3 mr-1" />
+                          Activo
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">
+                          <X className="h-3 w-3 mr-1" />
+                          Inactivo
+                        </Badge>
                       )}
-                      <p className="text-xs text-gray-400 mt-1">
-                        {lista.nuItems} {lista.nuItems === 1 ? 'item' : 'items'}
-                      </p>
                     </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenItemDialog(lista.cdLista);
-                      }}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Nuevo Item
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenListaDialog(lista);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteLista(lista.cdLista);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-600" />
-                    </Button>
+                    {lista.dsDescripcion && (
+                      <p className="text-sm text-gray-500 mt-1">{lista.dsDescripcion}</p>
+                    )}
+                    <p className="text-xs text-gray-400 mt-1">
+                      {lista.nuItems} {lista.nuItems === 1 ? 'item' : 'items'}
+                    </p>
                   </div>
                 </div>
-
-                {/* Contenido expandible - Items */}
-                {isExpanded && (
-                  <div className="p-4 bg-white">
-                    {listaItems.length === 0 ? (
-                      <div className="text-center py-6 text-gray-500">
-                        <p>No hay items en esta lista</p>
-                      </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleOpenItemsModal(lista)}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    Ver Items
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleToggleEstadoLista(lista)}
+                    title={lista.cdEstado === 1 ? 'Desactivar' : 'Activar'}
+                  >
+                    {lista.cdEstado === 1 ? (
+                      <X className="h-4 w-4 text-orange-600" />
                     ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Valor</TableHead>
-                            <TableHead>Descripción</TableHead>
-                            <TableHead>Orden</TableHead>
-                            <TableHead>Estado</TableHead>
-                            <TableHead className="text-right">Acciones</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {listaItems.map((item) => (
-                            <TableRow key={item.cdListaItem}>
-                              <TableCell className="font-medium">{item.dsValor}</TableCell>
-                              <TableCell>{item.dsDescripcion || '-'}</TableCell>
-                              <TableCell>{item.nuOrden}</TableCell>
-                              <TableCell>
-                                <span
-                                  className={`px-2 py-1 rounded text-xs ${
-                                    item.snActivo
-                                      ? 'bg-green-100 text-green-800'
-                                      : 'bg-red-100 text-red-800'
-                                  }`}
-                                >
-                                  {item.snActivo ? 'Activo' : 'Inactivo'}
-                                </span>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex justify-end gap-2">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleOpenItemDialog(lista.cdLista, item)}
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleDeleteItem(item.cdListaItem, lista.cdLista)}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-red-600" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                      <Check className="h-4 w-4 text-green-600" />
                     )}
-                  </div>
-                )}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleOpenListaDialog(lista)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       )}
 
@@ -556,31 +353,31 @@ export function ListasNorma({ cdNorma, cdEmpresaConsultora }: ListasNormaProps) 
         </DialogContent>
       </Dialog>
 
-      {/* Dialog para crear/editar Item */}
-      <Dialog open={itemDialogOpen} onOpenChange={setItemDialogOpen}>
+      {/* Dialog para crear/editar Lista */}
+      <Dialog open={listaDialogOpen} onOpenChange={setListaDialogOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {editingItem ? 'Editar Item' : 'Nuevo Item'}
+              {editingLista ? 'Editar Lista' : 'Nueva Lista'}
             </DialogTitle>
             <DialogDescription>
-              Complete los datos del item de la lista
+              Complete los datos de la lista de valores fijos de la norma
             </DialogDescription>
           </DialogHeader>
 
-          <form onSubmit={handleSubmitItem} className="space-y-4">
+          <form onSubmit={handleSubmitLista} className="space-y-4">
             <div>
-              <Label htmlFor="dsValor">
-                Valor <span className="text-red-500">*</span>
+              <Label htmlFor="dsNombreLista">
+                Nombre de la Lista <span className="text-red-500">*</span>
               </Label>
               <Input
-                id="dsValor"
-                value={itemFormData.dsValor}
+                id="dsNombreLista"
+                value={listaFormData.dsNombreLista}
                 onChange={(e) =>
-                  setItemFormData({ ...itemFormData, dsValor: e.target.value })
+                  setListaFormData({ ...listaFormData, dsNombreLista: e.target.value })
                 }
                 required
-                placeholder="Ej: Tipo 1"
+                placeholder="Ej: Tipo de Documento"
               />
             </div>
 
@@ -588,25 +385,12 @@ export function ListasNorma({ cdNorma, cdEmpresaConsultora }: ListasNormaProps) 
               <Label htmlFor="dsDescripcion">Descripción</Label>
               <Textarea
                 id="dsDescripcion"
-                value={itemFormData.dsDescripcion}
+                value={listaFormData.dsDescripcion}
                 onChange={(e) =>
-                  setItemFormData({ ...itemFormData, dsDescripcion: e.target.value })
+                  setListaFormData({ ...listaFormData, dsDescripcion: e.target.value })
                 }
-                rows={2}
+                rows={3}
                 placeholder="Descripción opcional"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="nuOrden">Orden</Label>
-              <Input
-                id="nuOrden"
-                type="number"
-                value={itemFormData.nuOrden}
-                onChange={(e) =>
-                  setItemFormData({ ...itemFormData, nuOrden: e.target.value })
-                }
-                placeholder="0"
               />
             </div>
 
@@ -614,29 +398,35 @@ export function ListasNorma({ cdNorma, cdEmpresaConsultora }: ListasNormaProps) 
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setItemDialogOpen(false)}
+                onClick={() => setListaDialogOpen(false)}
               >
                 Cancelar
               </Button>
               <Button type="submit">
-                {editingItem ? 'Actualizar' : 'Crear'}
+                {editingLista ? 'Actualizar' : 'Crear'}
               </Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
 
-      {confirmAction && (
-        <ConfirmDialog
-          open={confirmDialogOpen}
-          onOpenChange={setConfirmDialogOpen}
-          onConfirm={confirmAction.action}
-          title={confirmAction.title}
-          description={confirmAction.description}
-          confirmText="Eliminar"
-          variant="destructive"
-        />
-      )}
+      {/* Modal para gestionar items */}
+      <ListaItemsModal
+        open={itemsModalOpen}
+        onOpenChange={setItemsModalOpen}
+        lista={selectedListaForItems}
+        onUpdate={loadListas}
+      />
+
+      {/* Dialog de confirmación */}
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        onOpenChange={setConfirmDialogOpen}
+        onConfirm={executeConfirmAction}
+        title={confirmAction?.title || ''}
+        description={confirmAction?.description || ''}
+        variant="destructive"
+      />
     </div>
   );
 }

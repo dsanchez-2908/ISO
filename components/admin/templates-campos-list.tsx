@@ -154,7 +154,7 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
 
   const loadListas = async () => {
     try {
-      const response = await fetch(`/api/admin/listas?cdNorma=${cdNorma}`);
+      const response = await fetch(`/api/admin/listas?cdNorma=${cdNorma}&soloActivos=1`);
       const data = await response.json();
       if (data.success) {
         setListas(data.data);
@@ -168,7 +168,7 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
     if (listasItems[cdLista]) return; // Ya está cargado
     
     try {
-      const response = await fetch(`/api/admin/listas-items?cdLista=${cdLista}`);
+      const response = await fetch(`/api/admin/listas-items?cdLista=${cdLista}&soloActivos=1`);
       const data = await response.json();
       if (data.success) {
         setListasItems(prev => ({ ...prev, [cdLista]: data.data }));

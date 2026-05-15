@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { DashboardHeader } from '@/components/layout/dashboard-header';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
+import { Combobox } from '@/components/ui/combobox';
 
 interface Documento {
   cdRegistroDocumento: number;
@@ -163,7 +164,7 @@ export default function DocumentoFormPage() {
 
   const loadListasCliente = async (cdCliente: number) => {
     try {
-      const res = await fetch(`/api/admin/listas?cdCliente=${cdCliente}`);
+      const res = await fetch(`/api/admin/listas?cdCliente=${cdCliente}&soloActivos=1`);
       const data = await res.json();
       if (data.success) {
         setListasCliente(data.data.map((lista: any) => ({
@@ -182,7 +183,7 @@ export default function DocumentoFormPage() {
       
       if (campo.dsTipoHerencia === 'NORMA' && campo.cdLista) {
         // Cargar items de lista de norma
-        const res = await fetch(`/api/admin/listas-items?cdLista=${campo.cdLista}`);
+        const res = await fetch(`/api/admin/listas-items?cdLista=${campo.cdLista}&soloActivos=1`);
         const data = await res.json();
         if (data.success) {
           setOpcionesListas(prev => ({
@@ -198,7 +199,7 @@ export default function DocumentoFormPage() {
           // Para listas configuradas, cargar items de la lista seleccionada (si hay una)
           const listaSeleccionada = listasClienteSeleccionadas[campo.cdTemplateCampo] || campo.cdListaCliente;
           if (listaSeleccionada) {
-            const res = await fetch(`/api/admin/listas-items?cdLista=${listaSeleccionada}`);
+            const res = await fetch(`/api/admin/listas-items?cdLista=${listaSeleccionada}&soloActivos=1`);
             const data = await res.json();
             if (data.success) {
               setOpcionesListas(prev => ({
@@ -279,7 +280,7 @@ export default function DocumentoFormPage() {
     // Cargar items de la nueva lista
     if (cdLista) {
       try {
-        const res = await fetch(`/api/admin/listas-items?cdLista=${cdLista}`);
+        const res = await fetch(`/api/admin/listas-items?cdLista=${cdLista}&soloActivos=1`);
         const data = await res.json();
         if (data.success) {
           setOpcionesListas(prev => ({
@@ -483,38 +484,34 @@ export default function DocumentoFormPage() {
               {/* Dropdown 1: Seleccionar lista */}
               <div>
                 <label className="text-xs text-gray-600 mb-1 block">Lista:</label>
-                <select
-                  value={listaSeleccionada || ''}
-                  onChange={(e) => handleListaClienteChange(campo.cdTemplateCampo, parseInt(e.target.value))}
+                <Combobox
+                  options={listasCliente.map(lista => ({
+                    value: lista.id.toString(),
+                    label: lista.nombre
+                  }))}
+                  value={listaSeleccionada?.toString() || ''}
+                  onChange={(value) => handleListaClienteChange(campo.cdTemplateCampo, parseInt(value))}
+                  placeholder="-- Seleccione una lista --"
+                  searchPlaceholder="Buscar lista..."
                   disabled={esSoloLectura}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-                >
-                  <option value="">-- Seleccione una lista --</option>
-                  {listasCliente.map((lista) => (
-                    <option key={lista.id} value={lista.id}>
-                      {lista.nombre}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
               
               {/* Dropdown 2: Seleccionar valor de la lista */}
               {listaSeleccionada && (
                 <div>
                   <label className="text-xs text-gray-600 mb-1 block">Valor:</label>
-                  <select
-                    value={valor || ''}
-                    onChange={(e) => handleInputChange(campo.cdTemplateCampo, e.target.value)}
+                  <Combobox
+                    options={opciones.map(opcion => ({
+                      value: opcion.id.toString(),
+                      label: opcion.nombre
+                    }))}
+                    value={valor?.toString() || ''}
+                    onChange={(value) => handleInputChange(campo.cdTemplateCampo, value)}
+                    placeholder="-- Seleccione un valor --"
+                    searchPlaceholder="Buscar valor..."
                     disabled={esSoloLectura}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-                  >
-                    <option value="">-- Seleccione un valor --</option>
-                    {opciones.map((opcion) => (
-                      <option key={opcion.id} value={opcion.id}>
-                        {opcion.nombre}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </div>
               )}
             </div>
@@ -534,19 +531,17 @@ export default function DocumentoFormPage() {
                 <span className="text-xs text-gray-500 ml-2">({campo.dsEntidadCliente})</span>
               )}
             </label>
-            <select
-              value={valor || ''}
-              onChange={(e) => handleInputChange(campo.cdTemplateCampo, e.target.value)}
+            <Combobox
+              options={opciones.map(opcion => ({
+                value: opcion.id.toString(),
+                label: opcion.nombre
+              }))}
+              value={valor?.toString() || ''}
+              onChange={(value) => handleInputChange(campo.cdTemplateCampo, value)}
+              placeholder="-- Seleccione --"
+              searchPlaceholder="Buscar..."
               disabled={esSoloLectura}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
-            >
-              <option value="">-- Seleccione --</option>
-              {opciones.map((opcion) => (
-                <option key={opcion.id} value={opcion.id}>
-                  {opcion.nombre}
-                </option>
-              ))}
-            </select>
+            />
           </div>
         );
 

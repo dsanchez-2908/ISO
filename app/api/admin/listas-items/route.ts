@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const cdLista = searchParams.get('cdLista');
+    const soloActivos = searchParams.get('soloActivos'); // Filtrar solo items activos (snActivo = 1)
 
     if (!cdLista) {
       return NextResponse.json({ success: false, error: 'cdLista es requerido' }, { status: 400 });
@@ -34,6 +35,7 @@ export async function GET(request: NextRequest) {
         cdUsuarioCreacion
       FROM TD_LISTAS_ITEMS
       WHERE cdLista = @cdLista
+      ${soloActivos === '1' ? 'AND snActivo = 1' : ''}
       ORDER BY nuOrden, dsValor
     `, { cdLista: parseInt(cdLista) });
 

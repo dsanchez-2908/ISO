@@ -13,16 +13,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Plus, Pencil, Trash2, ChevronDown, ChevronRight, List } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Pencil, List as ListIcon, Eye, Check, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { ListaItemsModal } from '@/components/admin/lista-items-modal';
 
 interface Lista {
   cdLista: number;
@@ -53,8 +47,6 @@ interface ListasClienteProps {
 export function ListasCliente({ cdCliente, cdEmpresaConsultora }: ListasClienteProps) {
   const { toast } = useToast();
   const [listas, setListas] = useState<Lista[]>([]);
-  const [items, setItems] = useState<{ [key: number]: ListaItem[] }>({});
-  const [expandedListas, setExpandedListas] = useState<Set<number>>(new Set());
   const [loading, setLoading] = useState(true);
   
   // Dialogs para Lista
@@ -65,20 +57,17 @@ export function ListasCliente({ cdCliente, cdEmpresaConsultora }: ListasClienteP
     dsDescripcion: '',
   });
 
-  // Dialogs para Items
-  const [itemDialogOpen, setItemDialogOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<ListaItem | null>(null);
-  const [selectedListaForItem, setSelectedListaForItem] = useState<number | null>(null);
-  const [itemFormData, setItemFormData] = useState({
-    dsValor: '',
-    dsDescripcion: '',
-    nuOrden: '',
-  });
+  // Modal para gestionar items
+  const [itemsModalOpen, setItemsModalOpen] = useState(false);
+  const [selectedListaForItems, setSelectedListaForItems] = useState<Lista | null>(null);
 
   // Confirm Dialog
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [confirmMessage, setConfirmMessage] = useState('');
-  const [confirmAction, setConfirmAction] = useState<() => void>(() => () => {});
+  const [confirmAction, setConfirmAction] = useState<{
+    action: () => Promise<void>;
+    title: string;
+    description: string;
+  } | null>(null);
 
   useEffect(() => {
     loadListas();
@@ -103,33 +92,9 @@ export function ListasCliente({ cdCliente, cdEmpresaConsultora }: ListasClienteP
     }
   };
 
-  const loadItems = async (cdLista: number) => {
-    try {
-      const response = await fetch(`/api/admin/listas-items?cdLista=${cdLista}`);
-      const data = await response.json();
-      if (data.success) {
-        setItems((prev) => ({ ...prev, [cdLista]: data.data }));
-      }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Error al cargar items',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const toggleLista = (cdLista: number) => {
-    const newExpanded = new Set(expandedListas);
-    if (newExpanded.has(cdLista)) {
-      newExpanded.delete(cdLista);
-    } else {
-      newExpanded.add(cdLista);
-      if (!items[cdLista]) {
-        loadItems(cdLista);
-      }
-    }
-    setExpandedListas(newExpanded);
+  const handleOpenItemsModal = (lista: Lista) => {
+    setSelectedListaForItems(lista);
+    setItemsModalOpen(true);
   };
 
   // === CRUD de Listas ===
@@ -199,147 +164,54 @@ export function ListasCliente({ cdCliente, cdEmpresaConsultora }: ListasClienteP
     }
   };
 
-  const handleDeleteLista = async (cdLista: number) => {
-    setConfirmMessage('¿Está seguro de eliminar esta lista?');
-    setConfirmAction(() => async () => {
-      try {
-        const response = await fetch(`/api/admin/listas/${cdLista}`, {
-          method: 'DELETE',
-        });
+  const handleToggleEstadoLista = async (lista: Lista) => {
+    const nuevoEstado = lista.cdEstado === 1 ? 2 : 1;
+    const accion = nuevoEstado === 1 ? 'activar' : 'desactivar';
 
-        const data = await response.json();
-
-        if (data.success) {
-          toast({
-            title: 'Éxito',
-            description: 'Lista eliminada correctamente',
-            variant: 'success',
+    setConfirmAction({
+      action: async () => {
+        try {
+          const response = await fetch(`/api/admin/listas/${lista.cdLista}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              dsNombreLista: lista.dsNombreLista,
+              dsDescripcion: lista.dsDescripcion,
+              cdEstado: nuevoEstado,
+            }),
           });
-          loadListas();
-        } else {
+
+          const data = await response.json();
+
+          if (data.success) {
+            toast({
+              title: 'Éxito',
+              description: `Lista ${accion === 'activar' ? 'activada' : 'desactivada'} correctamente`,
+            });
+            loadListas();
+          } else {
+            throw new Error(data.error);
+          }
+        } catch (error: any) {
           toast({
             title: 'Error',
-            description: data.error || 'Error al eliminar lista',
+            description: error.message || `Error al ${accion} lista`,
             variant: 'destructive',
           });
         }
-      } catch (error) {
-        toast({
-          title: 'Error',
-          description: 'Error al eliminar lista',
-          variant: 'destructive',
-        });
-      }
+      },
+      title: `${accion.charAt(0).toUpperCase() + accion.slice(1)} lista`,
+      description: `¿Está seguro que desea ${accion} la lista "${lista.dsNombreLista}"?`,
     });
     setConfirmDialogOpen(true);
   };
 
-  // === CRUD de Items ===
-  const handleOpenItemDialog = (cdLista: number, item?: ListaItem) => {
-    setSelectedListaForItem(cdLista);
-    if (item) {
-      setEditingItem(item);
-      setItemFormData({
-        dsValor: item.dsValor,
-        dsDescripcion: item.dsDescripcion || '',
-        nuOrden: item.nuOrden.toString(),
-      });
-    } else {
-      setEditingItem(null);
-      setItemFormData({
-        dsValor: '',
-        dsDescripcion: '',
-        nuOrden: '',
-      });
+  const executeConfirmAction = async () => {
+    if (confirmAction) {
+      await confirmAction.action();
+      setConfirmDialogOpen(false);
+      setConfirmAction(null);
     }
-    setItemDialogOpen(true);
-  };
-
-  const handleSubmitItem = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!selectedListaForItem) return;
-
-    try {
-      const url = editingItem
-        ? `/api/admin/listas-items/${editingItem.cdListaItem}`
-        : '/api/admin/listas-items';
-
-      const method = editingItem ? 'PUT' : 'POST';
-
-      const payload = {
-        ...itemFormData,
-        cdLista: selectedListaForItem,
-        snActivo: editingItem?.snActivo !== undefined ? editingItem.snActivo : true,
-      };
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        toast({
-          title: 'Éxito',
-          description: `Item ${editingItem ? 'actualizado' : 'creado'} correctamente`,
-          variant: 'success',
-        });
-        setItemDialogOpen(false);
-        loadItems(selectedListaForItem);
-        loadListas(); // Para actualizar el contador de items
-      } else {
-        toast({
-          title: 'Error',
-          description: data.error || 'Error al guardar item',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Error al guardar item',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const handleDeleteItem = async (cdListaItem: number, cdLista: number) => {
-    setConfirmMessage('¿Está seguro de eliminar este item?');
-    setConfirmAction(() => async () => {
-      try {
-        const response = await fetch(`/api/admin/listas-items/${cdListaItem}`, {
-          method: 'DELETE',
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          toast({
-            title: 'Éxito',
-            description: 'Item eliminado correctamente',
-            variant: 'success',
-          });
-          loadItems(cdLista);
-          loadListas(); // Para actualizar el contador
-        } else {
-          toast({
-            title: 'Error',
-            description: data.error || 'Error al eliminar item',
-            variant: 'destructive',
-          });
-        }
-      } catch (error) {
-        toast({
-          title: 'Error',
-          description: 'Error al eliminar item',
-          variant: 'destructive',
-        });
-      }
-    });
-    setConfirmDialogOpen(true);
   };
 
   if (loading) {
@@ -363,7 +235,7 @@ export function ListasCliente({ cdCliente, cdEmpresaConsultora }: ListasClienteP
 
       {listas.length === 0 ? (
         <div className="text-center py-8 text-gray-500 border rounded-lg bg-gray-50">
-          <List className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+          <ListIcon className="h-12 w-12 mx-auto mb-2 text-gray-300" />
           <p className="font-medium">No hay listas definidas para este cliente</p>
           <p className="text-sm mt-2">
             Las listas permiten definir valores fijos que pueden ser heredados en las normas
@@ -371,131 +243,65 @@ export function ListasCliente({ cdCliente, cdEmpresaConsultora }: ListasClienteP
         </div>
       ) : (
         <div className="space-y-2">
-          {listas.map((lista) => {
-            const isExpanded = expandedListas.has(lista.cdLista);
-            const listaItems = items[lista.cdLista] || [];
-
-            return (
-              <div key={lista.cdLista} className="border rounded-lg overflow-hidden">
-                {/* Header de la Lista */}
-                <div
-                  className="flex items-center justify-between p-4 bg-gray-50 cursor-pointer hover:bg-gray-100"
-                  onClick={() => toggleLista(lista.cdLista)}
-                >
-                  <div className="flex items-center gap-3">
-                    {isExpanded ? (
-                      <ChevronDown className="h-5 w-5 text-gray-500" />
-                    ) : (
-                      <ChevronRight className="h-5 w-5 text-gray-500" />
-                    )}
-                    <div>
+          {listas.map((lista) => (
+            <div key={lista.cdLista} className="border rounded-lg overflow-hidden bg-white">
+              <div className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
                       <p className="font-medium">{lista.dsNombreLista}</p>
-                      {lista.dsDescripcion && (
-                        <p className="text-sm text-gray-500">{lista.dsDescripcion}</p>
+                      {lista.cdEstado === 1 ? (
+                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                          <Check className="h-3 w-3 mr-1" />
+                          Activo
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary">
+                          <X className="h-3 w-3 mr-1" />
+                          Inactivo
+                        </Badge>
                       )}
-                      <p className="text-xs text-gray-400 mt-1">
-                        {lista.nuItems} {lista.nuItems === 1 ? 'item' : 'items'}
-                      </p>
                     </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenItemDialog(lista.cdLista);
-                      }}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Nuevo Item
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenListaDialog(lista);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteLista(lista.cdLista);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-600" />
-                    </Button>
+                    {lista.dsDescripcion && (
+                      <p className="text-sm text-gray-500 mt-1">{lista.dsDescripcion}</p>
+                    )}
+                    <p className="text-xs text-gray-400 mt-1">
+                      {lista.nuItems} {lista.nuItems === 1 ? 'item' : 'items'}
+                    </p>
                   </div>
                 </div>
-
-                {/* Contenido expandible - Items */}
-                {isExpanded && (
-                  <div className="p-4 bg-white">
-                    {listaItems.length === 0 ? (
-                      <div className="text-center py-6 text-gray-500">
-                        <p>No hay items en esta lista</p>
-                      </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleOpenItemsModal(lista)}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    Ver Items
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleToggleEstadoLista(lista)}
+                    title={lista.cdEstado === 1 ? 'Desactivar' : 'Activar'}
+                  >
+                    {lista.cdEstado === 1 ? (
+                      <X className="h-4 w-4 text-orange-600" />
                     ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Valor</TableHead>
-                            <TableHead>Descripción</TableHead>
-                            <TableHead>Orden</TableHead>
-                            <TableHead>Estado</TableHead>
-                            <TableHead className="text-right">Acciones</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {listaItems.map((item) => (
-                            <TableRow key={item.cdListaItem}>
-                              <TableCell className="font-medium">{item.dsValor}</TableCell>
-                              <TableCell>{item.dsDescripcion || '-'}</TableCell>
-                              <TableCell>{item.nuOrden}</TableCell>
-                              <TableCell>
-                                <span
-                                  className={`px-2 py-1 rounded text-xs ${
-                                    item.snActivo
-                                      ? 'bg-green-100 text-green-800'
-                                      : 'bg-red-100 text-red-800'
-                                  }`}
-                                >
-                                  {item.snActivo ? 'Activo' : 'Inactivo'}
-                                </span>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <div className="flex justify-end gap-2">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleOpenItemDialog(lista.cdLista, item)}
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleDeleteItem(item.cdListaItem, lista.cdLista)}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-red-600" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
+                      <Check className="h-4 w-4 text-green-600" />
                     )}
-                  </div>
-                )}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleOpenListaDialog(lista)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       )}
 
@@ -556,85 +362,22 @@ export function ListasCliente({ cdCliente, cdEmpresaConsultora }: ListasClienteP
         </DialogContent>
       </Dialog>
 
-      {/* Dialog para crear/editar Item */}
-      <Dialog open={itemDialogOpen} onOpenChange={setItemDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>
-              {editingItem ? 'Editar Item' : 'Nuevo Item'}
-            </DialogTitle>
-            <DialogDescription>
-              Complete los datos del item de la lista
-            </DialogDescription>
-          </DialogHeader>
+      {/* Modal para gestionar items */}
+      <ListaItemsModal
+        open={itemsModalOpen}
+        onOpenChange={setItemsModalOpen}
+        lista={selectedListaForItems}
+        onUpdate={loadListas}
+      />
 
-          <form onSubmit={handleSubmitItem} className="space-y-4">
-            <div>
-              <Label htmlFor="dsValor">
-                Valor <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="dsValor"
-                value={itemFormData.dsValor}
-                onChange={(e) =>
-                  setItemFormData({ ...itemFormData, dsValor: e.target.value })
-                }
-                required
-                placeholder="Ej: DNI"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="dsDescripcion">Descripción</Label>
-              <Textarea
-                id="dsDescripcion"
-                value={itemFormData.dsDescripcion}
-                onChange={(e) =>
-                  setItemFormData({ ...itemFormData, dsDescripcion: e.target.value })
-                }
-                rows={2}
-                placeholder="Descripción opcional"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="nuOrden">Orden</Label>
-              <Input
-                id="nuOrden"
-                type="number"
-                value={itemFormData.nuOrden}
-                onChange={(e) =>
-                  setItemFormData({ ...itemFormData, nuOrden: e.target.value })
-                }
-                placeholder="0"
-              />
-            </div>
-
-            <div className="flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setItemDialogOpen(false)}
-              >
-                Cancelar
-              </Button>
-              <Button type="submit">
-                {editingItem ? 'Actualizar' : 'Crear'}
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
+      {/* Dialog de confirmación */}
       <ConfirmDialog
         open={confirmDialogOpen}
         onOpenChange={setConfirmDialogOpen}
-        title="Confirmar acción"
-        description={confirmMessage}
-        onConfirm={() => {
-          confirmAction();
-          setConfirmDialogOpen(false);
-        }}
+        onConfirm={executeConfirmAction}
+        title={confirmAction?.title || ''}
+        description={confirmAction?.description || ''}
+        variant="destructive"
       />
     </div>
   );

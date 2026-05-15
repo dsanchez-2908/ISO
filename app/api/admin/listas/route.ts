@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const cdNorma = searchParams.get('cdNorma');
     const cdCliente = searchParams.get('cdCliente');
+    const soloActivos = searchParams.get('soloActivos'); // Filtrar solo listas activas (cdEstado = 1)
 
     if (!cdNorma && !cdCliente) {
       return NextResponse.json({ success: false, error: 'cdNorma o cdCliente es requerido' }, { status: 400 });
@@ -42,6 +43,7 @@ export async function GET(request: NextRequest) {
         FROM TD_LISTAS l
         LEFT JOIN TV_ESTADOS e ON l.cdEstado = e.cdEstado
         WHERE l.cdNorma = @cdNorma
+        ${soloActivos === '1' ? 'AND l.cdEstado = 1' : ''}
         ORDER BY l.dsNombreLista
       `, { cdNorma: parseInt(cdNorma) });
     } else {
@@ -62,6 +64,7 @@ export async function GET(request: NextRequest) {
         FROM TD_LISTAS l
         LEFT JOIN TV_ESTADOS e ON l.cdEstado = e.cdEstado
         WHERE l.cdCliente = @cdCliente
+        ${soloActivos === '1' ? 'AND l.cdEstado = 1' : ''}
         ORDER BY l.dsNombreLista
       `, { cdCliente: parseInt(cdCliente!) });
     }
