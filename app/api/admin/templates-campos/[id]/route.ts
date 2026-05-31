@@ -40,12 +40,15 @@ export async function GET(
         tc.cdLista,
         l.dsNombreLista,
         tc.cdValorDefaultLista,
+        tc.cdFormularioAsociado,
+        td.dsNombre AS dsNombreFormularioAsociado,
         tc.nuOrden,
         tc.feCreacion,
         tc.cdUsuarioCreacion
       FROM TD_TEMPLATES_CAMPOS tc
       LEFT JOIN TV_TIPOS_CAMPO tip ON tc.cdTipoCampo = tip.cdTipoCampo
       LEFT JOIN TD_LISTAS l ON tc.cdLista = l.cdLista
+      LEFT JOIN TD_TEMPLATES_DOCUMENTOS td ON tc.cdFormularioAsociado = td.cdTemplateDocumento
       WHERE tc.cdTemplateCampo = @cdTemplateCampo
     `, { cdTemplateCampo });
 
@@ -93,6 +96,7 @@ export async function PUT(
       dsEntidadCliente,
       cdLista,
       cdValorDefaultLista,
+      cdFormularioAsociado,
       nuOrden
     } = body;
 
@@ -111,6 +115,7 @@ export async function PUT(
           dsEntidadCliente = @dsEntidadCliente,
           cdLista = @cdLista,
           cdValorDefaultLista = @cdValorDefaultLista,
+          cdFormularioAsociado = @cdFormularioAsociado,
           nuOrden = @nuOrden
       WHERE cdTemplateCampo = @cdTemplateCampo
     `, {
@@ -128,6 +133,7 @@ export async function PUT(
       dsEntidadCliente: dsEntidadCliente || null,
       cdLista: cdLista ? parseInt(cdLista) : null,
       cdValorDefaultLista: cdValorDefaultLista ? parseInt(cdValorDefaultLista) : null,
+      cdFormularioAsociado: cdFormularioAsociado ? parseInt(cdFormularioAsociado) : null,
       nuOrden: nuOrden ? parseInt(nuOrden) : 0
     });
 

@@ -22,7 +22,7 @@ export async function PUT(
     const { id } = await params;
     const cdRegistroDocumento = parseInt(id);
     const body = await request.json();
-    const { campos } = body; // Array de { cdRegistroCampoValor, dsValor, cdListaItem, cdListaCliente, cdEntidadCliente, dsEntidadTipo }
+    const { campos } = body; // Array de { cdRegistroCampoValor, dsValor, cdListaItem, cdListaCliente, cdEntidadCliente, dsEntidadTipo, dsAditusDocId, dsNombreArchivo, cdRegistroVinculado }
 
     if (!Array.isArray(campos)) {
       return NextResponse.json(
@@ -39,7 +39,10 @@ export async function PUT(
         cdListaItem,
         cdListaCliente,
         cdEntidadCliente,
-        dsEntidadTipo
+        dsEntidadTipo,
+        dsAditusDocId,
+        dsNombreArchivo,
+        cdRegistroVinculado
       } = campo;
 
       if (cdRegistroCampoValor) {
@@ -50,6 +53,9 @@ export async function PUT(
               cdListaCliente = @cdListaCliente,
               cdEntidadCliente = @cdEntidadCliente,
               dsEntidadTipo = @dsEntidadTipo,
+              dsAditusDocId = @dsAditusDocId,
+              dsNombreArchivo = @dsNombreArchivo,
+              cdRegistroVinculado = @cdRegistroVinculado,
               feModificacion = GETDATE(),
               cdUsuarioModificacion = @cdUsuarioModificacion
           WHERE cdRegistroCampoValor = @cdRegistroCampoValor
@@ -60,6 +66,9 @@ export async function PUT(
           cdListaCliente: cdListaCliente || null,
           cdEntidadCliente: cdEntidadCliente || null,
           dsEntidadTipo: dsEntidadTipo || null,
+          dsAditusDocId: dsAditusDocId || null,
+          dsNombreArchivo: dsNombreArchivo || null,
+          cdRegistroVinculado: cdRegistroVinculado || null,
           cdUsuarioModificacion: decoded.cdUsuario
         });
       }

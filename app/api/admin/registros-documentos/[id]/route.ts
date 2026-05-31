@@ -79,6 +79,7 @@ export async function GET(
         tc.dsEntidadCliente,
         tc.cdLista,
         l.dsNombreLista,
+        tc.cdFormularioAsociado,
         tc.nuOrden,
         rcv.cdRegistroCampoValor,
         rcv.dsValor,
@@ -86,7 +87,10 @@ export async function GET(
         li.dsValor as dsValorListaItem,
         rcv.cdListaCliente,
         rcv.cdEntidadCliente,
-        rcv.dsEntidadTipo
+        rcv.dsEntidadTipo,
+        rcv.dsAditusDocId,
+        rcv.dsNombreArchivo,
+        rcv.cdRegistroVinculado
       FROM TD_TEMPLATES_CAMPOS tc
       LEFT JOIN TV_TIPOS_CAMPO tip ON tc.cdTipoCampo = tip.cdTipoCampo
       LEFT JOIN TD_LISTAS l ON tc.cdLista = l.cdLista

@@ -51,6 +51,8 @@ interface TemplateCampo {
   dsNombreLista: string | null;
   cdValorDefaultLista: number | null;
   nuOrden: number;
+  cdFormularioAsociado: number | null;
+  dsNombreFormularioAsociado: string | null;
 }
 
 interface TipoCampo {
@@ -69,9 +71,15 @@ interface ListaItem {
   dsValor: string;
 }
 
+interface Formulario {
+  cdTemplateDocumento: number;
+  dsNombre: string;
+  cdCodigo: string | null;
+}
+
 interface TemplatesCamposListProps {
   cdTemplateDocumento: number;
-  dsNombreTemplate: string;
+  dsNombreTemplate?: string;
   cdNorma: number;
 }
 
@@ -81,6 +89,7 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
   const [tiposCampo, setTiposCampo] = useState<TipoCampo[]>([]);
   const [listas, setListas] = useState<Lista[]>([]);
   const [listasItems, setListasItems] = useState<{ [key: number]: ListaItem[] }>({});
+  const [formularios, setFormularios] = useState<Formulario[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingCampo, setEditingCampo] = useState<TemplateCampo | null>(null);
@@ -109,12 +118,14 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
     cdValorDefaultLista: '',
     tieneValorDefault: false,
     nuOrden: '',
+    cdFormularioAsociado: '', // Para tipo Formulario
   });
 
   useEffect(() => {
     loadTiposCampo();
     loadCampos();
     loadListas();
+    loadFormularios();
   }, [cdTemplateDocumento]);
 
   const loadTiposCampo = async () => {
@@ -164,6 +175,22 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
     }
   };
 
+  const loadFormularios = async () => {
+    try {
+      const response = await fetch(`/api/admin/formularios?cdNorma=${cdNorma}`);
+      const data = await response.json();
+      if (data.success) {
+        // Filtrar solo activos y excluir el formulario actual
+        const formulariosActivos = data.data.filter(
+          (f: any) => f.snActivo && f.cdTemplateDocumento !== cdTemplateDocumento
+        );
+        setFormularios(formulariosActivos);
+      }
+    } catch (error) {
+      console.error('Error al cargar formularios:', error);
+    }
+  };
+
   const loadListaItems = async (cdLista: number) => {
     if (listasItems[cdLista]) return; // Ya está cargado
     
@@ -198,6 +225,7 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
         cdValorDefaultLista: campo.cdValorDefaultLista?.toString() || '',
         tieneValorDefault: !!campo.cdValorDefaultLista,
         nuOrden: campo.nuOrden?.toString() || '',
+        cdFormularioAsociado: campo.cdFormularioAsociado?.toString() || '',
       });
       
       // Cargar items si tiene lista seleccionada
@@ -222,6 +250,7 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
         cdValorDefaultLista: '',
         tieneValorDefault: false,
         nuOrden: '',
+        cdFormularioAsociado: '',
       });
     }
     setDialogOpen(true);
@@ -238,6 +267,18 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
       toast({
         title: 'Validación',
         description: 'Debe seleccionar una entidad de cliente cuando la lista hereda de cliente',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Validación: Si es tipo Formulario, debe tener formulario asociado
+    if (tipoCampoElemento === 'campo' && 
+        parseInt(formData.cdTipoCampo) === 13 && 
+        !formData.cdFormularioAsociado) {
+      toast({
+        title: 'Validación',
+        description: 'Debe seleccionar un formulario asociado para este tipo de campo',
         variant: 'destructive',
       });
       return;
@@ -267,6 +308,7 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
         cdValorDefaultLista: formData.tieneValorDefault && formData.cdValorDefaultLista 
           ? parseInt(formData.cdValorDefaultLista) 
           : null,
+        cdFormularioAsociado: formData.cdFormularioAsociado ? parseInt(formData.cdFormularioAsociado) : null,
         nuOrden: formData.nuOrden ? parseInt(formData.nuOrden) : 0,
       };
 
@@ -351,6 +393,8 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
       cdLista: '',
       cdValorDefaultLista: '',
       tieneValorDefault: false,
+      // Resetear formulario asociado si cambia a otro tipo
+      cdFormularioAsociado: value === '13' ? prev.cdFormularioAsociado : '',
     }));
   };
 
@@ -723,8 +767,44 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
                     </div>
                   )}
 
-                  {/* Valor por Defecto (para tipos NO lista) */}
-                  {!esLista && (
+                  {/* === OPCIONES PARA TIPO FORMULARIO === */}
+                  {formData.cdTipoCampo === '13' && (
+                    <div className="space-y-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                      <h4 className="font-medium text-purple-900">Configuración de Formulario Anidado</h4>
+                      
+                      <div>
+                        <Label htmlFor="cdFormularioAsociado">
+                          Seleccionar Formulario <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                          value={formData.cdFormularioAsociado}
+                          onValueChange={(value) => setFormData({ ...formData, cdFormularioAsociado: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Seleccione formulario" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {formularios.map((formulario) => (
+                              <SelectItem key={formulario.cdTemplateDocumento} value={formulario.cdTemplateDocumento.toString()}>
+                                {formulario.dsNombre} {formulario.cdCodigo && `(${formulario.cdCodigo})`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {formularios.length === 0 && (
+                          <p className="text-xs text-orange-600 mt-1">
+                            No hay formularios disponibles. Primero cree otros formularios en la pestaña Formularios.
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-500 mt-1">
+                          El usuario podrá crear múltiples registros del formulario seleccionado dentro de este campo.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Valor por Defecto (para tipos NO lista y NO formulario) */}
+                  {!esLista && formData.cdTipoCampo !== '13' && (
                     <div>
                       <Label htmlFor="dsValorDefault">Valor por Defecto</Label>
                       <Input

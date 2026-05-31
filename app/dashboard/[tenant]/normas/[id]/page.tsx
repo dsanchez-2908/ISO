@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, FileText, ClipboardList, Building2, List } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RequisitosTemplates } from '@/components/admin/requisitos-templates';
+import { FormulariosList } from '@/components/admin/formularios-list';
 import { ListasNorma } from '@/components/admin/listas-norma';
 import { DashboardHeader } from '@/components/layout/dashboard-header';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
@@ -203,12 +204,16 @@ export default function NormaDetallePage() {
         </Card>
       </div>
 
-      {/* Tabs para Requisitos y Listas */}
+      {/* Tabs para Requisitos, Formularios y Listas */}
       <Tabs defaultValue="requisitos" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 max-w-md">
+        <TabsList className="grid w-full grid-cols-3 max-w-2xl">
           <TabsTrigger value="requisitos">
             <ClipboardList className="h-4 w-4 mr-2" />
-            Requisitos y Templates
+            Requisitos
+          </TabsTrigger>
+          <TabsTrigger value="formularios">
+            <FileText className="h-4 w-4 mr-2" />
+            Formularios
           </TabsTrigger>
           <TabsTrigger value="listas">
             <List className="h-4 w-4 mr-2" />
@@ -221,11 +226,25 @@ export default function NormaDetallePage() {
             <CardHeader>
               <CardTitle>Requisitos de la Norma</CardTitle>
               <CardDescription>
-                Gestione los requisitos y sus templates asociados. Cada requisito puede tener uno o más templates de documentos.
+                Gestione los requisitos de la norma y asocie los formularios correspondientes. Cada requisito puede tener uno o más formularios asociados.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <RequisitosTemplates cdNorma={parseInt(cdNorma)} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="formularios">
+          <Card>
+            <CardHeader>
+              <CardTitle>Formularios de la Norma</CardTitle>
+              <CardDescription>
+                Gestione los formularios que pueden ser asociados a los requisitos. Los formularios son reutilizables entre diferentes requisitos.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <FormulariosList cdNorma={parseInt(cdNorma)} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -235,7 +254,7 @@ export default function NormaDetallePage() {
             <CardHeader>
               <CardTitle>Listas de Valores Fijos</CardTitle>
               <CardDescription>
-                Defina listas con valores fijos que podrán ser utilizadas en los campos de tipo Lista de los templates
+                Defina listas con valores fijos que podrán ser utilizadas en los campos de tipo Lista de los formularios
               </CardDescription>
             </CardHeader>
             <CardContent>

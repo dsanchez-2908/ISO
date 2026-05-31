@@ -6,6 +6,10 @@ import { useToast } from '@/hooks/use-toast';
 import { DashboardHeader } from '@/components/layout/dashboard-header';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { Combobox } from '@/components/ui/combobox';
+import { Button } from '@/components/ui/button';
+import { FileText, Eye, Upload, Link2, Plus, Trash2, Edit } from 'lucide-react';
+import { SeleccionarRegistroDialog } from '@/components/admin/seleccionar-registro-dialog';
+import { FormularioHijoDialog } from '@/components/admin/formulario-hijo-dialog';
 
 interface Documento {
   cdRegistroDocumento: number;
@@ -51,6 +55,10 @@ interface Campo {
   cdListaCliente: number | null;
   cdEntidadCliente: number | null;
   dsEntidadTipo: string | null;
+  dsAditusDocId: string | null;
+  dsNombreArchivo: string | null;
+  cdRegistroVinculado: number | null;
+  cdFormularioAsociado: number | null;
 }
 
 interface OpcionLista {
@@ -77,6 +85,20 @@ export default function DocumentoFormPage() {
   const [userName, setUserName] = useState('');
   const [empresaNombre, setEmpresaNombre] = useState('');
   const [empresaLogo, setEmpresaLogo] = useState('');
+  const [cdEmpresaConsultora, setCdEmpresaConsultora] = useState<number | null>(null);
+  
+  // Estados para modal de selección de registro (Hipervínculo)
+  const [modalRegistroOpen, setModalRegistroOpen] = useState(false);
+  const [campoRegistroActual, setCampoRegistroActual] = useState<number | null>(null);
+
+  // Estados para modal de formulario hijo
+  const [modalFormularioOpen, setModalFormularioOpen] = useState(false);
+  const [campoFormularioActual, setCampoFormularioActual] = useState<{
+    cdTemplateCampo: number;
+    cdFormularioAsociado: number;
+  } | null>(null);
+  const [registrosHijos, setRegistrosHijos] = useState<{ [key: number]: any[] }>({});
+  const [registroHijoActual, setRegistroHijoActual] = useState<any>(null);
 
   useEffect(() => {
     checkAuth();
@@ -92,6 +114,7 @@ export default function DocumentoFormPage() {
         setUserName(user.dsNombreCompleto || user.dsUsuario);
         setEmpresaNombre(user.dsNombreEmpresaConsultora || '');
         setEmpresaLogo(user.dsLogoEmpresa || '');
+        setCdEmpresaConsultora(user.cdEmpresaConsultora || null);
       }
     } catch (error) {
       console.error('Error al verificar autenticación:', error);
@@ -147,6 +170,13 @@ export default function DocumentoFormPage() {
         for (const campo of data.data.campos) {
           if (campo.cdTipoCampo === 4 && !campo.snEsTitulo) { // Lista
             await loadOpcionesLista(campo, data.data.documento);
+          }
+        }
+
+        // Cargar registros hijos para campos de tipo Formulario
+        for (const campo of data.data.campos) {
+          if (campo.cdTipoCampo === 13 && !campo.snEsTitulo && campo.cdFormularioAsociado) {
+            await loadRegistrosHijos(campo.cdTemplateCampo);
           }
         }
       }
@@ -257,6 +287,23 @@ export default function DocumentoFormPage() {
     }
   };
 
+  const loadRegistrosHijos = async (cdTemplateCampo: number) => {
+    try {
+      const res = await fetch(
+        `/api/admin/formularios-hijos?cdRegistroDocumentoPadre=${cdRegistroDocumento}&cdTemplateCampo=${cdTemplateCampo}`
+      );
+      const data = await res.json();
+      if (data.success) {
+        setRegistrosHijos(prev => ({
+          ...prev,
+          [cdTemplateCampo]: data.data
+        }));
+      }
+    } catch (error) {
+      console.error('Error al cargar registros hijos:', error);
+    }
+  };
+
   const handleInputChange = (cdTemplateCampo: number, value: any) => {
     setValoresFormulario(prev => ({
       ...prev,
@@ -303,6 +350,229 @@ export default function DocumentoFormPage() {
     }
   };
 
+  const handleCambiarArchivo = async (cdTemplateCampo: number) => {
+    // Validar que tengamos el cdEmpresaConsultora
+    if (!cdEmpresaConsultora) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'No se pudo obtener la información de la empresa consultora'
+      });
+      return;
+    }
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.onchange = async (e: any) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      try {
+        // Convertir archivo a base64
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          const base64Content = event.target?.result as string;
+          const base64Data = base64Content.split(',')[1];
+
+          console.log('Subiendo archivo con cdEmpresaConsultora:', cdEmpresaConsultora);
+
+          // Subir a Aditus
+          const uploadRes = await fetch('/api/aditus/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              cdEmpresaConsultora: cdEmpresaConsultora,
+              fileContent: base64Data,
+              fileName: file.name,
+              contentType: file.type
+            })
+          });
+
+          const uploadData = await uploadRes.json();
+          if (uploadData.success) {
+            // Actualizar el valor en el estado
+            const campo = campos.find(c => c.cdTemplateCampo === cdTemplateCampo);
+            if (campo) {
+              campo.dsAditusDocId = uploadData.data.documentId;
+              campo.dsNombreArchivo = file.name;
+              setCampos([...campos]);
+            }
+            toast({
+              title: 'Éxito',
+              description: 'Archivo cargado correctamente'
+            });
+          } else {
+            throw new Error(uploadData.error);
+          }
+        };
+        reader.readAsDataURL(file);
+      } catch (error: any) {
+        console.error('Error al subir archivo:', error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: error.message || 'No se pudo subir el archivo'
+        });
+      }
+    };
+    input.click();
+  };
+
+  const handleVerArchivo = async (docId: string) => {
+    if (!cdEmpresaConsultora) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'No se pudo obtener la información de la empresa consultora'
+      });
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/aditus/visor', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cdEmpresaConsultora: cdEmpresaConsultora,
+          documentId: docId
+        })
+      });
+      const data = await res.json();
+      if (data.success && data.data.visorUrl) {
+        window.open(data.data.visorUrl, '_blank');
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'No se pudo abrir el archivo'
+      });
+    }
+  };
+
+  const handleCambiarRegistroVinculado = (cdTemplateCampo: number) => {
+    setCampoRegistroActual(cdTemplateCampo);
+    setModalRegistroOpen(true);
+  };
+
+  const handleSeleccionarRegistro = (cdRegistroVinculado: number, nombreRegistro: string) => {
+    if (campoRegistroActual) {
+      const campo = campos.find(c => c.cdTemplateCampo === campoRegistroActual);
+      if (campo) {
+        campo.cdRegistroVinculado = cdRegistroVinculado;
+        setCampos([...campos]);
+        toast({
+          title: 'Éxito',
+          description: `Registro "${nombreRegistro}" vinculado correctamente`
+        });
+      }
+    }
+  };
+
+  const handleVerRegistroVinculado = (cdRegistroVinculado: number) => {
+    // Navegar al registro vinculado
+    const campo = campos.find(c => c.cdRegistroVinculado === cdRegistroVinculado);
+    if (campo && documento) {
+      // Obtener el cdCertificacion del registro vinculado para construir la URL correcta
+      router.push(`/dashboard/${tenant}/certificaciones/${documento.cdCertificacion}/documentos/${cdRegistroVinculado}`);
+    }
+  };
+
+  const handleAgregarFormularioHijo = (cdTemplateCampo: number, cdFormularioAsociado: number) => {
+    setCampoFormularioActual({ cdTemplateCampo, cdFormularioAsociado });
+    setRegistroHijoActual(null); // Nuevo registro
+    setModalFormularioOpen(true);
+  };
+
+  const handleEditarFormularioHijo = async (cdRegistroDocumentoHijo: number, cdTemplateCampo: number, cdFormularioAsociado: number) => {
+    try {
+      // Cargar datos del registro hijo
+      const res = await fetch(`/api/admin/registros-documentos/${cdRegistroDocumentoHijo}`);
+      const data = await res.json();
+      
+      if (data.success) {
+        const doc = data.data.documento;
+        const camposData = data.data.campos;
+        
+        // Preparar valores y listas seleccionadas
+        const valores: { [key: number]: any } = {};
+        const listasClienteSeleccionadas: { [key: number]: number } = {};
+        
+        camposData.forEach((campo: Campo) => {
+          if (!campo.snEsTitulo) {
+            if (campo.cdTipoCampo === 4) { // Lista
+              valores[campo.cdTemplateCampo] = campo.cdListaItem || '';
+              if (campo.cdListaCliente) {
+                listasClienteSeleccionadas[campo.cdTemplateCampo] = campo.cdListaCliente;
+              }
+            } else if (campo.cdTipoCampo === 8) { // Booleano
+              valores[campo.cdTemplateCampo] = campo.dsValor === '1' || campo.dsValor === 'true';
+            } else {
+              valores[campo.cdTemplateCampo] = campo.dsValor || '';
+            }
+          }
+        });
+        
+        setCampoFormularioActual({ cdTemplateCampo, cdFormularioAsociado });
+        setRegistroHijoActual({
+          cdRegistroDocumentoHijo,
+          valores,
+          listasClienteSeleccionadas
+        });
+        setModalFormularioOpen(true);
+      }
+    } catch (error) {
+      console.error('Error al cargar registro hijo:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'No se pudo cargar el registro para editar'
+      });
+    }
+  };
+
+  const handleGuardarFormularioHijo = async () => {
+    if (campoFormularioActual) {
+      await loadRegistrosHijos(campoFormularioActual.cdTemplateCampo);
+      setRegistroHijoActual(null); // Limpiar después de guardar
+      toast({
+        title: 'Éxito',
+        description: 'Registro de formulario guardado correctamente'
+      });
+    }
+  };
+
+  const handleEliminarFormularioHijo = async (cdRegistroDocumentoHijo: number, cdTemplateCampo: number) => {
+    if (!confirm('¿Está seguro de eliminar este registro?')) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/admin/formularios-hijos/${cdRegistroDocumentoHijo}`, {
+        method: 'DELETE'
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        await loadRegistrosHijos(cdTemplateCampo);
+        toast({
+          title: 'Éxito',
+          description: 'Registro eliminado correctamente'
+        });
+      } else {
+        throw new Error(data.error);
+      }
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'No se pudo eliminar el registro'
+      });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -336,7 +606,10 @@ export default function DocumentoFormPage() {
             cdListaItem: null,
             cdListaCliente: null,
             cdEntidadCliente: null,
-            dsEntidadTipo: null
+            dsEntidadTipo: null,
+            dsAditusDocId: null,
+            dsNombreArchivo: null,
+            cdRegistroVinculado: null
           };
 
           if (campo.cdTipoCampo === 4) { // Lista
@@ -355,6 +628,11 @@ export default function DocumentoFormPage() {
             }
           } else if (campo.cdTipoCampo === 8) { // Booleano
             resultado.dsValor = valor ? '1' : '0';
+          } else if (campo.cdTipoCampo === 11) { // Archivo
+            resultado.dsAditusDocId = campo.dsAditusDocId || null;
+            resultado.dsNombreArchivo = campo.dsNombreArchivo || null;
+          } else if (campo.cdTipoCampo === 12) { // Hipervínculo
+            resultado.cdRegistroVinculado = campo.cdRegistroVinculado || null;
           } else {
             resultado.dsValor = valor || null;
           }
@@ -650,6 +928,171 @@ export default function DocumentoFormPage() {
           </div>
         );
 
+      case 11: // Archivo
+        return (
+          <div key={campo.cdTemplateCampo} className="flex flex-col col-span-2">
+            <label className="text-sm font-medium text-gray-700 mb-1">
+              {campo.dsEtiqueta}
+              {esRequerido && <span className="text-red-500 ml-1">*</span>}
+            </label>
+            <div className="space-y-2">
+              {campo.dsNombreArchivo && campo.dsAditusDocId ? (
+                <div className="flex items-center space-x-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-md">
+                  <FileText className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm text-gray-700 flex-1">{campo.dsNombreArchivo}</span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleVerArchivo(campo.dsAditusDocId!)}
+                    disabled={esSoloLectura}
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
+                    Ver
+                  </Button>
+                  {!esSoloLectura && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCambiarArchivo(campo.cdTemplateCampo)}
+                    >
+                      <Upload className="h-4 w-4 mr-1" />
+                      Cambiar
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                !esSoloLectura && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => handleCambiarArchivo(campo.cdTemplateCampo)}
+                    className="w-full"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Agregar Archivo
+                  </Button>
+                )
+              )}
+            </div>
+          </div>
+        );
+
+      case 12: // Hipervínculo
+        return (
+          <div key={campo.cdTemplateCampo} className="flex flex-col col-span-2">
+            <label className="text-sm font-medium text-gray-700 mb-1">
+              {campo.dsEtiqueta}
+              {esRequerido && <span className="text-red-500 ml-1">*</span>}
+            </label>
+            <div className="space-y-2">
+              {campo.cdRegistroVinculado ? (
+                <div className="flex items-center space-x-2 px-3 py-2 bg-green-50 border border-green-200 rounded-md">
+                  <Link2 className="h-4 w-4 text-green-600" />
+                  <span className="text-sm text-gray-700 flex-1">
+                    Registro vinculado: #{campo.cdRegistroVinculado}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleVerRegistroVinculado(campo.cdRegistroVinculado!)}
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
+                    Ver
+                  </Button>
+                  {!esSoloLectura && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleCambiarRegistroVinculado(campo.cdTemplateCampo)}
+                    >
+                      <Link2 className="h-4 w-4 mr-1" />
+                      Cambiar
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                !esSoloLectura && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => handleCambiarRegistroVinculado(campo.cdTemplateCampo)}
+                    className="w-full"
+                  >
+                    <Link2 className="h-4 w-4 mr-2" />
+                    Asociar Registro
+                  </Button>
+                )
+              )}
+            </div>
+          </div>
+        );
+
+      case 13: // Formulario
+        const hijosDelCampo = registrosHijos[campo.cdTemplateCampo] || [];
+        return (
+          <div key={campo.cdTemplateCampo} className="flex flex-col col-span-2">
+            <label className="text-sm font-medium text-gray-700 mb-1">
+              {campo.dsEtiqueta}
+              {esRequerido && <span className="text-red-500 ml-1">*</span>}
+            </label>
+            <div className="space-y-2">
+              {!esSoloLectura && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => handleAgregarFormularioHijo(campo.cdTemplateCampo, campo.cdFormularioAsociado!)}
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Agregar Registro
+                </Button>
+              )}
+              
+              {/* Lista de registros hijos */}
+              {hijosDelCampo.length > 0 && (
+                <div className="border border-gray-200 rounded-md divide-y">
+                  {hijosDelCampo.map((hijo) => (
+                    <div key={hijo.cdRegistroDocumentoHijo} className="flex items-center justify-between p-3 bg-purple-50">
+                      <div className="flex items-center space-x-2">
+                        <FileText className="h-4 w-4 text-purple-600" />
+                        <span className="text-sm text-gray-700">
+                          {hijo.dsCodigoDocumento} - {hijo.dsNombreDocumento}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        {!esSoloLectura && (
+                          <>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditarFormularioHijo(hijo.cdRegistroDocumentoHijo, campo.cdTemplateCampo, campo.cdFormularioAsociado!)}
+                            >
+                              <Edit className="h-4 w-4 text-blue-600" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEliminarFormularioHijo(hijo.cdRegistroDocumentoHijo, campo.cdTemplateCampo)}
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+
       default:
         return null;
     }
@@ -698,9 +1141,19 @@ export default function DocumentoFormPage() {
 
         {/* Header del documento */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">
-            {documento?.dsNombreDocumento || 'Documento sin nombre'}
-          </h1>
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-bold text-gray-900">
+              {documento?.dsNombreDocumento || 'Documento sin nombre'}
+            </h1>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.back()}
+              className="flex items-center gap-2"
+            >
+              ← Volver
+            </Button>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
             <div>
@@ -762,6 +1215,31 @@ export default function DocumentoFormPage() {
           </div>
         </form>
       </div>
+
+      {/* Modal de selección de registro para Hipervínculo */}
+      {documento && cdEmpresaConsultora && (
+        <SeleccionarRegistroDialog
+          open={modalRegistroOpen}
+          onOpenChange={setModalRegistroOpen}
+          onSeleccionar={handleSeleccionarRegistro}
+          cdCliente={documento.cdCliente}
+          cdEmpresaConsultora={cdEmpresaConsultora}
+        />
+      )}
+
+      {/* Modal de formulario hijo para Formulario */}
+      {campoFormularioActual && documento && (
+        <FormularioHijoDialog
+          open={modalFormularioOpen}
+          onOpenChange={setModalFormularioOpen}
+          onGuardar={handleGuardarFormularioHijo}
+          cdTemplateDocumento={campoFormularioActual.cdFormularioAsociado}
+          cdRegistroDocumentoPadre={cdRegistroDocumento}
+          cdTemplateCampo={campoFormularioActual.cdTemplateCampo}
+          cdCliente={documento.cdCliente}
+          registroHijo={registroHijoActual}
+        />
+      )}
     </div>
   );
 }

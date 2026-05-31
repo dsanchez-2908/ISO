@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 
-// GET /api/admin/registros-documentos?cdCertificacion=X
+// GET /api/admin/registros-documentos?cdCertificacion=X&cdRequisito=Y&cdTemplateDocumento=Z
 export async function GET(request: NextRequest) {
   try {
     const token = request.cookies.get('auth-token')?.value;
@@ -17,9 +17,25 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const cdCertificacion = searchParams.get('cdCertificacion');
+    const cdRequisito = searchParams.get('cdRequisito');
+    const cdTemplateDocumento = searchParams.get('cdTemplateDocumento');
 
     if (!cdCertificacion) {
       return NextResponse.json({ success: false, error: 'cdCertificacion es requerido' }, { status: 400 });
+    }
+
+    // Construir WHERE dinámico
+    let whereClause = 'WHERE rd.cdCertificacion = @cdCertificacion';
+    const params: any = { cdCertificacion: parseInt(cdCertificacion) };
+
+    if (cdRequisito) {
+      whereClause += ' AND rd.cdRequisito = @cdRequisito';
+      params.cdRequisito = parseInt(cdRequisito);
+    }
+
+    if (cdTemplateDocumento) {
+      whereClause += ' AND rd.cdTemplateDocumento = @cdTemplateDocumento';
+      params.cdTemplateDocumento = parseInt(cdTemplateDocumento);
     }
 
     const registros = await query(`
@@ -46,9 +62,9 @@ export async function GET(request: NextRequest) {
       INNER JOIN TD_TEMPLATES_DOCUMENTOS td ON rd.cdTemplateDocumento = td.cdTemplateDocumento
       INNER JOIN TD_REQUISITOS r ON rd.cdRequisito = r.cdRequisito
       INNER JOIN TV_ESTADOS e ON rd.cdEstadoDocumento = e.cdEstado
-      WHERE rd.cdCertificacion = @cdCertificacion
+      ${whereClause}
       ORDER BY r.nuOrden, r.cdCodigoRequisito, td.dsNombre
-    `, { cdCertificacion: parseInt(cdCertificacion) });
+    `, params);
 
     return NextResponse.json({ success: true, data: registros });
   } catch (error: any) {

@@ -30,6 +30,7 @@ export async function GET(
     }
 
     // Obtener templates del requisito con conteo de registros
+    // Usa TR_REQUISITOS_TEMPLATES para obtener los formularios asociados
     const templates = await query(`
       SELECT 
         td.cdTemplateDocumento,
@@ -49,7 +50,8 @@ export async function GET(
          WHERE tc.cdTemplateDocumento = td.cdTemplateDocumento
            AND tc.snEsTitulo = 0) as nuTotalCampos
       FROM TD_TEMPLATES_DOCUMENTOS td
-      WHERE td.cdRequisito = @cdRequisito
+      INNER JOIN TR_REQUISITOS_TEMPLATES rt ON td.cdTemplateDocumento = rt.cdTemplateDocumento
+      WHERE rt.cdRequisito = @cdRequisito
         AND td.snActivo = 1
       ORDER BY td.dsNombre
     `, {

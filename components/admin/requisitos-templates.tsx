@@ -14,7 +14,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { TemplatesList } from '@/components/admin/templates-list';
+import { RequisitoFormularios } from '@/components/admin/requisito-formularios';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface Requisito {
@@ -284,18 +284,18 @@ export function RequisitosTemplates({ cdNorma }: RequisitosTemplatesProps) {
                 </div>
               </div>
 
-              {/* Templates del Requisito */}
+              {/* Formularios del Requisito */}
               {expandedRequisito === requisito.cdRequisito && (
                 <div className="p-4 bg-white border-t">
                   <div className="mb-2">
                     <h4 className="font-semibold text-sm text-gray-700 mb-1">
-                      Templates del Requisito
+                      Formularios Asociados
                     </h4>
                     <p className="text-xs text-gray-500 mb-3">
-                      Los templates son los documentos que se generarán para este requisito
+                      Los formularios son los documentos que se generarán para este requisito
                     </p>
                   </div>
-                  <TemplatesList
+                  <RequisitoFormularios
                     cdNorma={cdNorma}
                     cdRequisito={requisito.cdRequisito}
                   />

@@ -377,7 +377,7 @@ export default function CertificacionPage() {
                       {requisito.cdCodigoRequisito} - {requisito.dsRequisito}
                     </div>
                     <div className="text-sm text-gray-600">
-                      {requisito.nuTotalTemplates} templates | {requisito.nuTotalRegistros} registros
+                      {requisito.nuTotalTemplates} formularios | {requisito.nuTotalRegistros} registros
                     </div>
                   </div>
                 </div>
@@ -401,7 +401,7 @@ export default function CertificacionPage() {
                             >
                               <span className="text-lg">{expandedTemplate === template.cdTemplateDocumento ? '▼' : '▶'}</span>
                               <div>
-                                <div className="font-medium">Template: {template.dsNombre}</div>
+                                <div className="font-medium">Formulario: {template.dsNombre}</div>
                                 <div className="text-sm text-gray-600">
                                   {template.nuTotalCampos} campos | {template.nuTotalRegistros} registros
                                 </div>

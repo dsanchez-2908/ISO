@@ -1,0 +1,157 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { query } from '@/lib/db';
+import { verifyToken } from '@/lib/auth';
+
+// GET /api/admin/formularios/[id]
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const token = request.cookies.get('auth-token')?.value;
+    if (!token) {
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
+    }
+
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      return NextResponse.json({ success: false, error: 'Token inválido' }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const cdTemplateDocumento = parseInt(id);
+
+    const formularios = await query(`
+      SELECT 
+        t.cdTemplateDocumento,
+        t.cdNorma,
+        t.cdRequisito,
+        t.cdCodigo,
+        t.dsNombre,
+        t.cdTipoDocumento,
+        t.dsVersionTemplate,
+        t.dsArchivoWord,
+        t.dsNombreArchivo,
+        t.snActivo,
+        t.feCreacion,
+        t.cdUsuarioCreacion,
+        t.feModificacion,
+        t.cdUsuarioModificacion
+      FROM TD_TEMPLATES_DOCUMENTOS t
+      WHERE t.cdTemplateDocumento = @cdTemplateDocumento
+    `, { cdTemplateDocumento });
+
+    if (!formularios || formularios.length === 0) {
+      return NextResponse.json({ success: false, error: 'Formulario no encontrado' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, data: formularios[0] });
+  } catch (error: any) {
+    console.error('Error al obtener formulario:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+// PUT /api/admin/formularios/[id]
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const token = request.cookies.get('auth-token')?.value;
+    if (!token) {
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
+    }
+
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      return NextResponse.json({ success: false, error: 'Token inválido' }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const cdTemplateDocumento = parseInt(id);
+    const body = await request.json();
+    const { 
+      cdCodigo, 
+      dsNombre, 
+      cdTipoDocumento, 
+      dsVersionTemplate,
+      dsArchivoWord,
+      dsNombreArchivo,
+      snActivo
+    } = body;
+
+    await query(`
+      UPDATE TD_TEMPLATES_DOCUMENTOS
+      SET cdCodigo = @cdCodigo,
+          dsNombre = @dsNombre,
+          cdTipoDocumento = @cdTipoDocumento,
+          dsVersionTemplate = @dsVersionTemplate,
+          dsArchivoWord = @dsArchivoWord,
+          dsNombreArchivo = @dsNombreArchivo,
+          snActivo = @snActivo,
+          feModificacion = GETDATE(),
+          cdUsuarioModificacion = @cdUsuarioModificacion
+      WHERE cdTemplateDocumento = @cdTemplateDocumento
+    `, {
+      cdTemplateDocumento,
+      cdCodigo: cdCodigo || null,
+      dsNombre,
+      cdTipoDocumento: cdTipoDocumento ? parseInt(cdTipoDocumento) : null,
+      dsVersionTemplate: dsVersionTemplate || null,
+      dsArchivoWord: dsArchivoWord || null,
+      dsNombreArchivo: dsNombreArchivo || null,
+      snActivo: snActivo !== undefined ? snActivo : true,
+      cdUsuarioModificacion: decoded.cdUsuario || null,
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Formulario actualizado correctamente' 
+    });
+  } catch (error: any) {
+    console.error('Error al actualizar formulario:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
+
+// DELETE /api/admin/formularios/[id]
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const token = request.cookies.get('auth-token')?.value;
+    if (!token) {
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
+    }
+
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      return NextResponse.json({ success: false, error: 'Token inválido' }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const cdTemplateDocumento = parseInt(id);
+
+    // Soft delete
+    await query(`
+      UPDATE TD_TEMPLATES_DOCUMENTOS
+      SET snActivo = 0,
+          feModificacion = GETDATE(),
+          cdUsuarioModificacion = @cdUsuarioModificacion
+      WHERE cdTemplateDocumento = @cdTemplateDocumento
+    `, {
+      cdTemplateDocumento,
+      cdUsuarioModificacion: decoded.cdUsuario || null,
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      message: 'Formulario desactivado correctamente' 
+    });
+  } catch (error: any) {
+    console.error('Error al desactivar formulario:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}

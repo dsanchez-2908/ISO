@@ -21,6 +21,7 @@ export async function GET(
     const { id } = await params;
 
     // Obtener requisitos de la norma de esta certificación
+    // Actualizado para usar TR_REQUISITOS_TEMPLATES en lugar de cdRequisito directo
     const requisitos = await query(`
       SELECT 
         r.cdRequisito,
@@ -29,24 +30,25 @@ export async function GET(
         r.dsDescripcion,
         r.nuOrden,
         (SELECT COUNT(*) 
-         FROM TD_TEMPLATES_DOCUMENTOS td 
-         WHERE td.cdRequisito = r.cdRequisito 
+         FROM TR_REQUISITOS_TEMPLATES rt
+         INNER JOIN TD_TEMPLATES_DOCUMENTOS td ON rt.cdTemplateDocumento = td.cdTemplateDocumento
+         WHERE rt.cdRequisito = r.cdRequisito 
            AND td.snActivo = 1) as nuTotalTemplates,
-        (SELECT COUNT(DISTINCT rd.cdTemplateDocumento)
+        (SELECT COUNT(DISTINCT rt.cdTemplateDocumento)
          FROM TD_REGISTROS_DOCUMENTOS rd
-         INNER JOIN TD_TEMPLATES_DOCUMENTOS td ON rd.cdTemplateDocumento = td.cdTemplateDocumento
+         INNER JOIN TR_REQUISITOS_TEMPLATES rt ON rd.cdTemplateDocumento = rt.cdTemplateDocumento
          WHERE rd.cdCertificacion = @cdCertificacion
-           AND td.cdRequisito = r.cdRequisito) as nuTemplatesConRegistros,
+           AND rt.cdRequisito = r.cdRequisito) as nuTemplatesConRegistros,
         (SELECT COUNT(*)
          FROM TD_REGISTROS_DOCUMENTOS rd
-         INNER JOIN TD_TEMPLATES_DOCUMENTOS td ON rd.cdTemplateDocumento = td.cdTemplateDocumento
+         INNER JOIN TR_REQUISITOS_TEMPLATES rt ON rd.cdTemplateDocumento = rt.cdTemplateDocumento
          WHERE rd.cdCertificacion = @cdCertificacion
-           AND td.cdRequisito = r.cdRequisito) as nuTotalRegistros,
+           AND rt.cdRequisito = r.cdRequisito) as nuTotalRegistros,
         (SELECT COUNT(*)
          FROM TD_REGISTROS_DOCUMENTOS rd
-         INNER JOIN TD_TEMPLATES_DOCUMENTOS td ON rd.cdTemplateDocumento = td.cdTemplateDocumento
+         INNER JOIN TR_REQUISITOS_TEMPLATES rt ON rd.cdTemplateDocumento = rt.cdTemplateDocumento
          WHERE rd.cdCertificacion = @cdCertificacion
-           AND td.cdRequisito = r.cdRequisito
+           AND rt.cdRequisito = r.cdRequisito
            AND rd.cdEstadoDocumento = 3) as nuRegistrosCompletos
       FROM TD_REQUISITOS r
       INNER JOIN TD_CERTIFICACIONES c ON r.cdNorma = c.cdNorma

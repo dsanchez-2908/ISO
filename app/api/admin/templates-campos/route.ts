@@ -41,12 +41,15 @@ export async function GET(request: NextRequest) {
         tc.cdLista,
         l.dsNombreLista,
         tc.cdValorDefaultLista,
+        tc.cdFormularioAsociado,
+        td.dsNombre AS dsNombreFormularioAsociado,
         tc.nuOrden,
         tc.feCreacion,
         tc.cdUsuarioCreacion
       FROM TD_TEMPLATES_CAMPOS tc
       LEFT JOIN TV_TIPOS_CAMPO tip ON tc.cdTipoCampo = tip.cdTipoCampo
       LEFT JOIN TD_LISTAS l ON tc.cdLista = l.cdLista
+      LEFT JOIN TD_TEMPLATES_DOCUMENTOS td ON tc.cdFormularioAsociado = td.cdTemplateDocumento
       WHERE tc.cdTemplateDocumento = @cdTemplateDocumento
       ORDER BY tc.nuOrden, tc.cdTemplateCampo
     `, { cdTemplateDocumento: parseInt(cdTemplateDocumento) });
@@ -87,6 +90,7 @@ export async function POST(request: NextRequest) {
       dsEntidadCliente,
       cdLista,
       cdValorDefaultLista,
+      cdFormularioAsociado,
       nuOrden
     } = body;
 
@@ -117,13 +121,13 @@ export async function POST(request: NextRequest) {
       INSERT INTO TD_TEMPLATES_CAMPOS (
         cdTemplateDocumento, snEsTitulo, dsTitulo, dsNombreCampo, dsEtiqueta, cdTipoCampo,
         dsValorDefault, snObligatorio, snOculto, snSoloLectura, 
-        dsTipoHerencia, dsEntidadCliente, cdLista, cdValorDefaultLista, nuOrden,
+        dsTipoHerencia, dsEntidadCliente, cdLista, cdValorDefaultLista, cdFormularioAsociado, nuOrden,
         feCreacion, cdUsuarioCreacion
       )
       VALUES (
         @cdTemplateDocumento, @snEsTitulo, @dsTitulo, @dsNombreCampo, @dsEtiqueta, @cdTipoCampo,
         @dsValorDefault, @snObligatorio, @snOculto, @snSoloLectura,
-        @dsTipoHerencia, @dsEntidadCliente, @cdLista, @cdValorDefaultLista, @nuOrden,
+        @dsTipoHerencia, @dsEntidadCliente, @cdLista, @cdValorDefaultLista, @cdFormularioAsociado, @nuOrden,
         GETDATE(), @cdUsuarioCreacion
       );
       SELECT SCOPE_IDENTITY() AS cdTemplateCampo;
@@ -142,6 +146,7 @@ export async function POST(request: NextRequest) {
       dsEntidadCliente: dsEntidadCliente || null,
       cdLista: cdLista ? parseInt(cdLista) : null,
       cdValorDefaultLista: cdValorDefaultLista ? parseInt(cdValorDefaultLista) : null,
+      cdFormularioAsociado: cdFormularioAsociado ? parseInt(cdFormularioAsociado) : null,
       nuOrden: nuOrden ? parseInt(nuOrden) : 0,
       cdUsuarioCreacion: decoded.cdUsuario
     });
