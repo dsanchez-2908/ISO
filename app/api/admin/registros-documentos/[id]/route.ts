@@ -207,3 +207,67 @@ export async function DELETE(
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
+
+// PATCH /api/admin/registros-documentos/[id]
+// Actualiza parcialmente un registro (ej: solo el estado)
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const token = request.cookies.get('auth-token')?.value;
+    if (!token) {
+      return NextResponse.json({ success: false, error: 'No autorizado' }, { status: 401 });
+    }
+
+    const decoded = verifyToken(token);
+    if (!decoded) {
+      return NextResponse.json({ success: false, error: 'Token inválido' }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const cdRegistroDocumento = parseInt(id);
+    const body = await request.json();
+
+    // Construir UPDATE dinámico solo con los campos presentes
+    const updates: string[] = [];
+    const params_query: any = { cdRegistroDocumento };
+
+    if (body.cdEstadoDocumento !== undefined) {
+      updates.push('cdEstadoDocumento = @cdEstadoDocumento');
+      params_query.cdEstadoDocumento = parseInt(body.cdEstadoDocumento);
+    }
+
+    if (body.dsNombreDocumento !== undefined) {
+      updates.push('dsNombreDocumento = @dsNombreDocumento');
+      params_query.dsNombreDocumento = body.dsNombreDocumento;
+    }
+
+    if (body.dsObservaciones !== undefined) {
+      updates.push('dsObservaciones = @dsObservaciones');
+      params_query.dsObservaciones = body.dsObservaciones;
+    }
+
+    if (updates.length === 0) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'No hay campos para actualizar' 
+      }, { status: 400 });
+    }
+
+    updates.push('feModificacion = GETDATE()');
+    updates.push('cdUsuarioModificacion = @cdUsuarioModificacion');
+    params_query.cdUsuarioModificacion = decoded.cdUsuario;
+
+    await query(`
+      UPDATE TD_REGISTROS_DOCUMENTOS
+      SET ${updates.join(', ')}
+      WHERE cdRegistroDocumento = @cdRegistroDocumento
+    `, params_query);
+
+    return NextResponse.json({ success: true, data: { cdRegistroDocumento } });
+  } catch (error: any) {
+    console.error('Error al actualizar registro de documento:', error);
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}
