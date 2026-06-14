@@ -55,6 +55,7 @@ interface Registro {
   cdRegistroDocumento: number;
   dsCodigoDocumento: string;
   dsNombreDocumento: string;
+  dsNombreTemplate?: string;
   cdEstadoDocumento: number;
   dsEstadoDocumento: string;
   nuCamposTotal: number;

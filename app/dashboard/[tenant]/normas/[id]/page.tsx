@@ -4,13 +4,14 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, FileText, ClipboardList, Building2, List } from 'lucide-react';
+import { ArrowLeft, FileText, ClipboardList, Building2, List, Copy } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RequisitosTemplates } from '@/components/admin/requisitos-templates';
 import { FormulariosList } from '@/components/admin/formularios-list';
 import { ListasNorma } from '@/components/admin/listas-norma';
 import { DashboardHeader } from '@/components/layout/dashboard-header';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
+import { NormaFormDialog } from '@/components/admin/norma-form-dialog';
 
 interface Norma {
   cdNorma: number;
@@ -37,6 +38,8 @@ export default function NormaDetallePage() {
   const [userName, setUserName] = useState('');
   const [empresaNombre, setEmpresaNombre] = useState('');
   const [empresaLogo, setEmpresaLogo] = useState('');
+  const [copiarDialogOpen, setCopiarDialogOpen] = useState(false);
+  const [cdEmpresaConsultora, setCdEmpresaConsultora] = useState(0);
 
   useEffect(() => {
     checkAuth();
@@ -57,6 +60,7 @@ export default function NormaDetallePage() {
       setUserName(user.dsNombreCompleto || user.dsUsuario);
       setEmpresaNombre(user.dsNombreEmpresaConsultora || '');
       setEmpresaLogo(user.dsLogoEmpresa || '');
+      setCdEmpresaConsultora(user.cdEmpresaConsultora || 0);
     } catch (error) {
       console.error('Error al verificar autenticación:', error);
       router.push(`/login/${tenant}`);
@@ -77,6 +81,10 @@ export default function NormaDetallePage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCopiarSuccess = () => {
+    router.push(`/dashboard/${tenant}/normas`);
   };
 
   if (loading) {
@@ -133,15 +141,22 @@ export default function NormaDetallePage() {
             </div>
             <div className="flex gap-2">
               <Button 
-              variant="outline" 
-              onClick={() => router.push(`/dashboard/${tenant}/normas?edit=${cdNorma}`)}
-            >
-              <Building2 className="mr-2 h-4 w-4" />
-              Editar Norma
-            </Button>
+                variant="outline" 
+                onClick={() => router.push(`/dashboard/${tenant}/normas?edit=${cdNorma}`)}
+              >
+                <Building2 className="mr-2 h-4 w-4" />
+                Editar Norma
+              </Button>
+              <Button 
+                variant="default" 
+                onClick={() => setCopiarDialogOpen(true)}
+              >
+                <Copy className="mr-2 h-4 w-4" />
+                Copiar Norma
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
 
       {/* Info Rápida */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -267,6 +282,17 @@ export default function NormaDetallePage() {
         </TabsContent>
       </Tabs>
       </div>
+
+      {/* Dialog para Copiar Norma */}
+      <NormaFormDialog
+        open={copiarDialogOpen}
+        onOpenChange={setCopiarDialogOpen}
+        norma={null}
+        cdEmpresaConsultora={cdEmpresaConsultora}
+        onSuccess={handleCopiarSuccess}
+        modoCopia={true}
+        cdNormaOrigen={parseInt(cdNorma)}
+      />
     </div>
   );
 }

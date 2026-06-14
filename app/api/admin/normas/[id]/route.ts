@@ -101,6 +101,7 @@ export async function PUT(
       dsOrganismoEmisor,
       feVigenteDesde,
       dsDescripcion,
+      cdNormaAnterior,
     } = body;
 
     // Validar campos requeridos
@@ -141,6 +142,7 @@ export async function PUT(
         dsOrganismoEmisor = @dsOrganismoEmisor,
         feVigenteDesde = @feVigenteDesde,
         dsDescripcion = @dsDescripcion,
+        cdNormaAnterior = @cdNormaAnterior,
         feModificacion = GETDATE(),
         cdUsuarioModificacion = @cdUsuarioModificacion
       WHERE cdNorma = @cdNorma
@@ -153,6 +155,7 @@ export async function PUT(
         dsOrganismoEmisor: dsOrganismoEmisor || null,
         feVigenteDesde: feVigenteDesde || null,
         dsDescripcion: dsDescripcion || null,
+        cdNormaAnterior: cdNormaAnterior || null,
         cdUsuarioModificacion: decoded.cdUsuario,
       }
     );

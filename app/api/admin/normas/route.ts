@@ -55,6 +55,9 @@ export async function GET(request: NextRequest) {
         e.dsEstado,
         n.feCreacion,
         n.feModificacion,
+        n.cdNormaAnterior,
+        na.dsNombre as dsNombreNormaAnterior,
+        na.dsVersion as dsVersionNormaAnterior,
         (
           SELECT COUNT(*)
           FROM TR_CLIENTES_NORMAS cn
@@ -62,6 +65,7 @@ export async function GET(request: NextRequest) {
         ) as nuClientesAsociados
       FROM TD_NORMAS n
       INNER JOIN TV_ESTADOS e ON n.cdEstado = e.cdEstado
+      LEFT JOIN TD_NORMAS na ON n.cdNormaAnterior = na.cdNorma
       WHERE n.cdEmpresaConsultora = @empresaId
       ORDER BY n.cdCodigo, n.dsVersion DESC
       `,
@@ -113,6 +117,7 @@ export async function POST(request: NextRequest) {
       dsOrganismoEmisor,
       feVigenteDesde,
       dsDescripcion,
+      cdNormaAnterior,
     } = body;
 
     // Validar campos requeridos
@@ -154,6 +159,7 @@ export async function POST(request: NextRequest) {
         dsOrganismoEmisor,
         feVigenteDesde,
         dsDescripcion,
+        cdNormaAnterior,
         cdEstado,
         feCreacion,
         cdUsuarioCreacion
@@ -166,6 +172,7 @@ export async function POST(request: NextRequest) {
         @dsOrganismoEmisor,
         @feVigenteDesde,
         @dsDescripcion,
+        @cdNormaAnterior,
         1,
         GETDATE(),
         @cdUsuarioCreacion
@@ -180,6 +187,7 @@ export async function POST(request: NextRequest) {
         dsOrganismoEmisor: dsOrganismoEmisor || null,
         feVigenteDesde: feVigenteDesde || null,
         dsDescripcion: dsDescripcion || null,
+        cdNormaAnterior: cdNormaAnterior || null,
         cdUsuarioCreacion: decoded.cdUsuario,
       }
     );

@@ -6,6 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -21,6 +28,8 @@ interface NormaFormDialogProps {
   norma: any | null;
   cdEmpresaConsultora: number;
   onSuccess: () => void;
+  modoCopia?: boolean;
+  cdNormaOrigen?: number;
 }
 
 export function NormaFormDialog({
@@ -29,9 +38,13 @@ export function NormaFormDialog({
   norma,
   cdEmpresaConsultora,
   onSuccess,
+  modoCopia = false,
+  cdNormaOrigen,
 }: NormaFormDialogProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [normasDisponibles, setNormasDisponibles] = useState<any[]>([]);
+  const [loadingNormas, setLoadingNormas] = useState(false);
 
   const [formData, setFormData] = useState({
     cdCodigo: '',
@@ -40,9 +53,15 @@ export function NormaFormDialog({
     dsOrganismoEmisor: '',
     feVigenteDesde: '',
     dsDescripcion: '',
+    cdNormaAnterior: '',
   });
 
   useEffect(() => {
+    if (open) {
+      // Cargar normas disponibles
+      loadNormasDisponibles();
+    }
+
     if (norma) {
       // Modo edición
       setFormData({
@@ -52,6 +71,7 @@ export function NormaFormDialog({
         dsOrganismoEmisor: norma.dsOrganismoEmisor || '',
         feVigenteDesde: norma.feVigenteDesde ? norma.feVigenteDesde.split('T')[0] : '',
         dsDescripcion: norma.dsDescripcion || '',
+        cdNormaAnterior: norma.cdNormaAnterior ? norma.cdNormaAnterior.toString() : '0',
       });
     } else {
       // Modo creación
@@ -62,10 +82,31 @@ export function NormaFormDialog({
         dsOrganismoEmisor: '',
         feVigenteDesde: '',
         dsDescripcion: '',
+        cdNormaAnterior: '0',
       });
     }
     setError('');
   }, [norma, open]);
+
+  const loadNormasDisponibles = async () => {
+    setLoadingNormas(true);
+    try {
+      const response = await fetch(`/api/admin/normas?cdEmpresaConsultora=${cdEmpresaConsultora}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        // Filtrar la norma actual si estamos editando
+        const normasFiltradas = norma 
+          ? data.data.filter((n: any) => n.cdNorma !== norma.cdNorma && n.cdEstado === 1)
+          : data.data.filter((n: any) => n.cdEstado === 1);
+        setNormasDisponibles(normasFiltradas);
+      }
+    } catch (error) {
+      console.error('Error al cargar normas:', error);
+    } finally {
+      setLoadingNormas(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,11 +120,22 @@ export function NormaFormDialog({
     setLoading(true);
 
     try {
-      const url = norma
-        ? `/api/admin/normas/${norma.cdNorma}`
-        : '/api/admin/normas';
+      let url: string;
+      let method: string;
 
-      const method = norma ? 'PUT' : 'POST';
+      if (modoCopia && cdNormaOrigen) {
+        // Modo copia: POST a endpoint especial
+        url = `/api/admin/normas/${cdNormaOrigen}/copiar`;
+        method = 'POST';
+      } else if (norma) {
+        // Modo edición
+        url = `/api/admin/normas/${norma.cdNorma}`;
+        method = 'PUT';
+      } else {
+        // Modo creación normal
+        url = '/api/admin/normas';
+        method = 'POST';
+      }
 
       const response = await fetch(url, {
         method,
@@ -94,6 +146,9 @@ export function NormaFormDialog({
           cdEmpresaConsultora,
           ...formData,
           feVigenteDesde: formData.feVigenteDesde || null,
+          cdNormaAnterior: formData.cdNormaAnterior && formData.cdNormaAnterior !== "0" 
+            ? parseInt(formData.cdNormaAnterior) 
+            : null,
         }),
       });
 
@@ -126,11 +181,15 @@ export function NormaFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{norma ? 'Editar Norma' : 'Nueva Norma'}</DialogTitle>
+          <DialogTitle>
+            {modoCopia ? 'Copiar Norma' : (norma ? 'Editar Norma' : 'Nueva Norma')}
+          </DialogTitle>
           <DialogDescription>
-            {norma
-              ? 'Modifique los datos de la norma'
-              : 'Complete los datos para crear una nueva norma ISO'}
+            {modoCopia
+              ? 'Complete los datos para la nueva norma. Se copiarán todos los requisitos, formularios y listas de la norma original.'
+              : (norma
+                ? 'Modifique los datos de la norma'
+                : 'Complete los datos para crear una nueva norma ISO')}
           </DialogDescription>
         </DialogHeader>
 
@@ -237,6 +296,31 @@ export function NormaFormDialog({
             />
           </div>
 
+          {/* Norma Anterior */}
+          <div className="space-y-2">
+            <Label htmlFor="cdNormaAnterior">Norma Anterior</Label>
+            <Select
+              value={formData.cdNormaAnterior || "0"}
+              onValueChange={(value) => setFormData({ ...formData, cdNormaAnterior: value === "0" ? "" : value })}
+              disabled={loading || loadingNormas}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={loadingNormas ? "Cargando normas..." : "Seleccione una norma anterior (opcional)"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="0">Ninguna</SelectItem>
+                {normasDisponibles.map((n) => (
+                  <SelectItem key={n.cdNorma} value={n.cdNorma.toString()}>
+                    {n.cdCodigo} {n.dsVersion && `(${n.dsVersion})`} - {n.dsNombre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-500">
+              Seleccione la versión anterior de esta norma para crear una relación histórica
+            </p>
+          </div>
+
           <DialogFooter>
             <Button
               type="button"
@@ -250,8 +334,10 @@ export function NormaFormDialog({
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Guardando...
+                  {modoCopia ? 'Copiando...' : 'Guardando...'}
                 </>
+              ) : modoCopia ? (
+                'Crear Copia'
               ) : norma ? (
                 'Actualizar'
               ) : (

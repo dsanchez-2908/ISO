@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -382,19 +383,28 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
     setConfirmDialogOpen(true);
   };
 
+  // Helper para obtener el nombre del tipo de campo
+  const getTipoCampoNombre = (cdTipoCampo: string): string => {
+    const tipo = tiposCampo.find(t => t.cdTipoCampo.toString() === cdTipoCampo);
+    return tipo?.dsTipoCampo || '';
+  };
+
   // Cuando cambia el tipo de campo a Lista
   const handleTipoCampoChange = (value: string) => {
+    const nombreTipo = getTipoCampoNombre(value);
     setFormData(prev => ({ 
       ...prev, 
       cdTipoCampo: value,
+      // Resetear valor por defecto al cambiar tipo de campo
+      dsValorDefault: '',
       // Resetear campos de lista si cambia a otro tipo
-      dsTipoHerencia: value === '4' ? prev.dsTipoHerencia : '',
+      dsTipoHerencia: nombreTipo === 'Lista' ? prev.dsTipoHerencia : '',
       dsEntidadCliente: '',
       cdLista: '',
       cdValorDefaultLista: '',
       tieneValorDefault: false,
       // Resetear formulario asociado si cambia a otro tipo
-      cdFormularioAsociado: value === '13' ? prev.cdFormularioAsociado : '',
+      cdFormularioAsociado: nombreTipo === 'Formulario' ? prev.cdFormularioAsociado : '',
     }));
   };
 
@@ -412,8 +422,9 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
   if (loading) {
     return <div className="text-center py-4">Cargando campos...</div>;
   }
-
-  const esLista = formData.cdTipoCampo === '4';
+  
+  const tipoCampoNombre = getTipoCampoNombre(formData.cdTipoCampo);
+  const esLista = tipoCampoNombre === 'Lista';
 
   return (
     <div className="space-y-4">
@@ -768,7 +779,7 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
                   )}
 
                   {/* === OPCIONES PARA TIPO FORMULARIO === */}
-                  {formData.cdTipoCampo === '13' && (
+                  {tipoCampoNombre === 'Formulario' && (
                     <div className="space-y-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
                       <h4 className="font-medium text-purple-900">Configuración de Formulario Anidado</h4>
                       
@@ -803,16 +814,84 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
                     </div>
                   )}
 
-                  {/* Valor por Defecto (para tipos NO lista y NO formulario) */}
-                  {!esLista && formData.cdTipoCampo !== '13' && (
+                  {/* Valor por Defecto (para tipos NO lista y NO formulario y NO archivo) */}
+                  {!esLista && tipoCampoNombre !== 'Formulario' && tipoCampoNombre !== 'Archivo' && formData.cdTipoCampo && (
                     <div>
                       <Label htmlFor="dsValorDefault">Valor por Defecto</Label>
-                      <Input
-                        id="dsValorDefault"
-                        value={formData.dsValorDefault}
-                        onChange={(e) => setFormData({ ...formData, dsValorDefault: e.target.value })}
-                        placeholder="Valor predeterminado (opcional)"
-                      />
+                      {/* Tipo Fecha */}
+                      {tipoCampoNombre === 'Fecha' && (
+                        <Input
+                          id="dsValorDefault"
+                          type="date"
+                          value={formData.dsValorDefault}
+                          onChange={(e) => setFormData({ ...formData, dsValorDefault: e.target.value })}
+                        />
+                      )}
+                      {/* Tipo Numero */}
+                      {tipoCampoNombre === 'Numero' && (
+                        <Input
+                          id="dsValorDefault"
+                          type="number"
+                          value={formData.dsValorDefault}
+                          onChange={(e) => setFormData({ ...formData, dsValorDefault: e.target.value })}
+                          placeholder="Ej: 100"
+                        />
+                      )}
+                      {/* Tipo Decimal */}
+                      {tipoCampoNombre === 'Decimal' && (
+                        <Input
+                          id="dsValorDefault"
+                          type="number"
+                          step="0.01"
+                          value={formData.dsValorDefault}
+                          onChange={(e) => setFormData({ ...formData, dsValorDefault: e.target.value })}
+                          placeholder="Ej: 100.50"
+                        />
+                      )}
+                      {/* Tipo TextoLargo */}
+                      {tipoCampoNombre === 'TextoLargo' && (
+                        <Textarea
+                          id="dsValorDefault"
+                          value={formData.dsValorDefault}
+                          onChange={(e) => setFormData({ ...formData, dsValorDefault: e.target.value })}
+                          placeholder="Texto predeterminado (opcional)"
+                          rows={4}
+                        />
+                      )}
+                      {/* Tipo Booleano */}
+                      {tipoCampoNombre === 'Booleano' && (
+                        <div className="flex items-center space-x-2 py-2">
+                          <Checkbox
+                            id="dsValorDefault"
+                            checked={formData.dsValorDefault === '1' || formData.dsValorDefault === 'true'}
+                            onCheckedChange={(checked) =>
+                              setFormData({ ...formData, dsValorDefault: checked ? '1' : '0' })
+                            }
+                          />
+                          <Label htmlFor="dsValorDefault" className="cursor-pointer">
+                            Valor por defecto: {formData.dsValorDefault === '1' || formData.dsValorDefault === 'true' ? 'Sí' : 'No'}
+                          </Label>
+                        </div>
+                      )}
+                      {/* Tipo FechaHora */}
+                      {tipoCampoNombre === 'FechaHora' && (
+                        <Input
+                          id="dsValorDefault"
+                          type="datetime-local"
+                          value={formData.dsValorDefault}
+                          onChange={(e) => setFormData({ ...formData, dsValorDefault: e.target.value })}
+                        />
+                      )}
+                      {/* Tipos: Texto, Email, Telefono, Hipervinculo - Input normal */}
+                      {(tipoCampoNombre === 'Texto' || tipoCampoNombre === 'Email' || 
+                        tipoCampoNombre === 'Telefono' || tipoCampoNombre === 'Hipervinculo') && (
+                        <Input
+                          id="dsValorDefault"
+                          value={formData.dsValorDefault}
+                          onChange={(e) => setFormData({ ...formData, dsValorDefault: e.target.value })}
+                          placeholder="Valor predeterminado (opcional)"
+                        />
+                      )}
                     </div>
                   )}
 

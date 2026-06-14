@@ -379,8 +379,8 @@ export async function GET(
     // Generar el PDF como bytes
     const pdfBytes = await pdfDoc.save();
 
-    // Retornar el PDF como respuesta
-    return new NextResponse(pdfBytes, {
+    // Retornar el PDF como respuesta (convertir Uint8Array a Buffer para compatibilidad con NextResponse)
+    return new NextResponse(Buffer.from(pdfBytes), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
