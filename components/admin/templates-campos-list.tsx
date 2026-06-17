@@ -46,6 +46,7 @@ interface TemplateCampo {
   snObligatorio: boolean;
   snOculto: boolean;
   snSoloLectura: boolean;
+  snNoVistaImpresion: boolean;
   dsTipoHerencia: string | null;
   dsEntidadCliente: string | null;
   cdLista: number | null;
@@ -113,6 +114,7 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
     snObligatorio: false,
     snOculto: false,
     snSoloLectura: false,
+    snNoVistaImpresion: false,
     dsTipoHerencia: '', // 'NORMA' o 'CLIENTE'
     dsEntidadCliente: '', // 'SECTORES', 'PUESTOS', 'EMPLEADOS'
     cdLista: '',
@@ -220,6 +222,7 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
         snObligatorio: campo.snObligatorio || false,
         snOculto: campo.snOculto || false,
         snSoloLectura: campo.snSoloLectura || false,
+        snNoVistaImpresion: campo.snNoVistaImpresion || false,
         dsTipoHerencia: campo.dsTipoHerencia || '',
         dsEntidadCliente: campo.dsEntidadCliente || '',
         cdLista: campo.cdLista?.toString() || '',
@@ -245,6 +248,7 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
         snObligatorio: false,
         snOculto: false,
         snSoloLectura: false,
+        snNoVistaImpresion: false,
         dsTipoHerencia: '',
         dsEntidadCliente: '',
         cdLista: '',
@@ -303,6 +307,7 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
         snObligatorio: formData.snObligatorio,
         snOculto: formData.snOculto,
         snSoloLectura: formData.snSoloLectura,
+        snNoVistaImpresion: formData.snNoVistaImpresion,
         dsTipoHerencia: formData.dsTipoHerencia || null,
         dsEntidadCliente: formData.dsEntidadCliente || null,
         cdLista: formData.cdLista ? parseInt(formData.cdLista) : null,
@@ -923,6 +928,19 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
                         />
                         <Label htmlFor="snOculto" className="cursor-pointer">
                           Oculto (no visible)
+                        </Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="snNoVistaImpresion"
+                          checked={formData.snNoVistaImpresion}
+                          onCheckedChange={(checked) =>
+                            setFormData({ ...formData, snNoVistaImpresion: checked as boolean })
+                          }
+                        />
+                        <Label htmlFor="snNoVistaImpresion" className="cursor-pointer">
+                          No Vista de Impresión
                         </Label>
                       </div>
 

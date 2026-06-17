@@ -36,6 +36,7 @@ export async function GET(request: NextRequest) {
         tc.snObligatorio,
         tc.snOculto,
         tc.snSoloLectura,
+        tc.snNoVistaImpresion,
         tc.dsTipoHerencia,
         tc.dsEntidadCliente,
         tc.cdLista,
@@ -86,6 +87,7 @@ export async function POST(request: NextRequest) {
       snObligatorio,
       snOculto,
       snSoloLectura,
+      snNoVistaImpresion,
       dsTipoHerencia,
       dsEntidadCliente,
       cdLista,
@@ -120,13 +122,13 @@ export async function POST(request: NextRequest) {
     const result = await query(`
       INSERT INTO TD_TEMPLATES_CAMPOS (
         cdTemplateDocumento, snEsTitulo, dsTitulo, dsNombreCampo, dsEtiqueta, cdTipoCampo,
-        dsValorDefault, snObligatorio, snOculto, snSoloLectura, 
+        dsValorDefault, snObligatorio, snOculto, snSoloLectura, snNoVistaImpresion,
         dsTipoHerencia, dsEntidadCliente, cdLista, cdValorDefaultLista, cdFormularioAsociado, nuOrden,
         feCreacion, cdUsuarioCreacion
       )
       VALUES (
         @cdTemplateDocumento, @snEsTitulo, @dsTitulo, @dsNombreCampo, @dsEtiqueta, @cdTipoCampo,
-        @dsValorDefault, @snObligatorio, @snOculto, @snSoloLectura,
+        @dsValorDefault, @snObligatorio, @snOculto, @snSoloLectura, @snNoVistaImpresion,
         @dsTipoHerencia, @dsEntidadCliente, @cdLista, @cdValorDefaultLista, @cdFormularioAsociado, @nuOrden,
         GETDATE(), @cdUsuarioCreacion
       );
@@ -142,6 +144,7 @@ export async function POST(request: NextRequest) {
       snObligatorio: snObligatorio ? 1 : 0,
       snOculto: snOculto ? 1 : 0,
       snSoloLectura: snSoloLectura ? 1 : 0,
+      snNoVistaImpresion: snNoVistaImpresion ? 1 : 0,
       dsTipoHerencia: dsTipoHerencia || null,
       dsEntidadCliente: dsEntidadCliente || null,
       cdLista: cdLista ? parseInt(cdLista) : null,

@@ -128,30 +128,39 @@ export async function GET(
     // Obtener los campos y valores del registro
     const camposResult = await query(`
       SELECT 
+        tc.snEsTitulo,
+        tc.dsTitulo,
         tc.dsNombreCampo,
         tc.dsEtiqueta,
         tc.nuOrden,
+        tc.snNoVistaImpresion,
         tv.dsTipoCampo,
         rcv.dsValor,
         li.dsValor as dsListaItemNombre,
         rcv.dsEntidadTipo,
         rcv.cdEntidadCliente
-      FROM TD_REGISTROS_CAMPOS_VALORES rcv
-      INNER JOIN TD_TEMPLATES_CAMPOS tc ON rcv.cdTemplateCampo = tc.cdTemplateCampo
-      INNER JOIN TV_TIPOS_CAMPO tv ON tc.cdTipoCampo = tv.cdTipoCampo
+      FROM TD_TEMPLATES_CAMPOS tc
+      LEFT JOIN TD_REGISTROS_CAMPOS_VALORES rcv ON tc.cdTemplateCampo = rcv.cdTemplateCampo AND rcv.cdRegistroDocumento = @p0
+      LEFT JOIN TV_TIPOS_CAMPO tv ON tc.cdTipoCampo = tv.cdTipoCampo
       LEFT JOIN TD_LISTAS_ITEMS li ON rcv.cdListaItem = li.cdListaItem
-      WHERE rcv.cdRegistroDocumento = @p0
+      WHERE tc.cdTemplateDocumento = (SELECT cdTemplateDocumento FROM TD_REGISTROS_DOCUMENTOS WHERE cdRegistroDocumento = @p0)
         AND (tc.snOculto IS NULL OR tc.snOculto = 0)
+        AND (tc.snNoVistaImpresion IS NULL OR tc.snNoVistaImpresion = 0)
       ORDER BY tc.nuOrden
     `, { p0: id });
 
-    console.log('Campos recuperados:', camposResult.length);
-    console.log('Muestra de campos:', camposResult.slice(0, 5).map(c => ({
+    console.log('=== DEBUG PDF ===');
+    console.log('Total campos recuperados:', camposResult.length);
+    console.log('Campos tipo Lista:', camposResult.filter(c => c.dsTipoCampo === 'Lista').length);
+    console.log('Detalle campos Lista:', camposResult.filter(c => c.dsTipoCampo === 'Lista').map(c => ({
+      orden: c.nuOrden,
       nombre: c.dsEtiqueta || c.dsNombreCampo,
-      tipo: c.dsTipoCampo,
-      valor: c.dsValor,
-      valorLength: c.dsValor?.length
+      esTitulo: c.snEsTitulo,
+      dsValor: c.dsValor,
+      dsListaItemNombre: c.dsListaItemNombre,
+      noVistaImpresion: c.snNoVistaImpresion
     })));
+    console.log('=== FIN DEBUG ===');
 
     // Crear el documento PDF con pdf-lib
     const pdfDoc = await PDFDocument.create();
@@ -258,91 +267,113 @@ export async function GET(
     
     yPosition -= 20;
 
-    // ===== CAMPOS Y VALORES =====
+    // ===== CAMPOS, TÍTULOS Y VALORES =====
     if (camposResult && camposResult.length > 0) {
-      // Título de sección
-      page.drawText('Campos del Formulario', {
-        x: 50,
-        y: yPosition,
-        size: 14,
-        font: timesRomanBoldFont,
-        color: blueColor,
-      });
-      yPosition -= 5;
-      
-      // Línea bajo el título
-      page.drawLine({
-        start: { x: 50, y: yPosition },
-        end: { x: 545, y: yPosition },
-        thickness: 1,
-        color: rgb(0.8, 0.84, 0.88),
-      });
-      yPosition -= 20;
-      
-      // Iterar sobre los campos
-      for (const campo of camposResult) {
-        let displayValue = campo.dsValor;
-        
-        // Formatear valores según el tipo de campo
-        if (campo.dsTipoCampo === 'LISTA' && campo.dsListaItemNombre) {
-          displayValue = campo.dsListaItemNombre;
-        } else if (campo.dsTipoCampo === 'FECHA' && campo.dsValor) {
-          try {
-            displayValue = new Date(campo.dsValor).toLocaleDateString('es-ES');
-          } catch (e) {
-            displayValue = campo.dsValor;
+      // Iterar sobre los elementos (campos y títulos) según el orden
+      for (const elemento of camposResult) {
+        // Si es un título (H Titulo)
+        if (elemento.snEsTitulo) {
+          // Verificar si necesitamos una nueva página
+          if (yPosition < 150) {
+            page = pdfDoc.addPage([595, 842]);
+            yPosition = height - 50;
           }
-        } else if (campo.dsTipoCampo === 'CHECKBOX') {
-          displayValue = campo.dsValor === '1' || campo.dsValor === 'true' ? 'Sí' : 'No';
+          
+          // Título de sección
+          page.drawText(elemento.dsTitulo || 'Sin título', {
+            x: 50,
+            y: yPosition,
+            size: 14,
+            font: timesRomanBoldFont,
+            color: blueColor,
+          });
+          yPosition -= 5;
+          
+          // Línea bajo el título
+          page.drawLine({
+            start: { x: 50, y: yPosition },
+            end: { x: 545, y: yPosition },
+            thickness: 1,
+            color: rgb(0.8, 0.84, 0.88),
+          });
+          yPosition -= 20;
+        } else {
+          // Es un campo regular
+          let displayValue = elemento.dsValor;
+          
+          // Formatear valores según el tipo de campo
+          if (elemento.dsTipoCampo === 'Lista' && elemento.dsListaItemNombre) {
+            displayValue = elemento.dsListaItemNombre;
+          } else if (elemento.dsTipoCampo === 'Fecha' && elemento.dsValor) {
+            try {
+              displayValue = new Date(elemento.dsValor).toLocaleDateString('es-ES');
+            } catch (e) {
+              displayValue = elemento.dsValor;
+            }
+          } else if (elemento.dsTipoCampo === 'FechaHora' && elemento.dsValor) {
+            try {
+              displayValue = new Date(elemento.dsValor).toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+              });
+            } catch (e) {
+              displayValue = elemento.dsValor;
+            }
+          } else if (elemento.dsTipoCampo === 'Booleano') {
+            displayValue = elemento.dsValor === '1' || elemento.dsValor === 'true' ? 'Sí' : 'No';
+          }
+          
+          // Saltar campos sin valor para hacer el PDF más limpio
+          if (!displayValue || displayValue.trim() === '') {
+            continue;
+          }
+          
+          // Verificar si necesitamos una nueva página antes de escribir el campo
+          if (yPosition < 150) {
+            page = pdfDoc.addPage([595, 842]);
+            yPosition = height - 50;
+          }
+          
+          // Etiqueta del campo
+          page.drawText(`${elemento.dsEtiqueta || elemento.dsNombreCampo}:`, {
+            x: 60,
+            y: yPosition,
+            size: 10,
+            font: timesRomanBoldFont,
+            color: darkGrayColor,
+          });
+          yPosition -= 15;
+          
+          // Valor del campo (con soporte multilínea)
+          const valueText = displayValue;
+          const valueColor = textColor;
+          
+          // Verificar si hay espacio suficiente, si no, crear nueva página
+          const estimatedLines = Math.ceil(valueText.length / 80); // Estimación aproximada
+          const estimatedHeight = estimatedLines * 14;
+          
+          if (yPosition - estimatedHeight < 80) {
+            page = pdfDoc.addPage([595, 842]);
+            yPosition = height - 50;
+          }
+          
+          // Dibujar texto con soporte multilínea
+          yPosition = drawMultilineText(
+            page,
+            valueText,
+            70,
+            yPosition,
+            timesRomanFont,
+            10,
+            valueColor,
+            465 // maxWidth (545 - 70 - margen derecho)
+          );
+          
+          yPosition -= 10; // Espaciado extra entre campos
         }
-        
-        // Saltar campos sin valor para hacer el PDF más limpio
-        if (!displayValue || displayValue.trim() === '') {
-          continue;
-        }
-        
-        // Verificar si necesitamos una nueva página antes de escribir el campo
-        if (yPosition < 150) {
-          page = pdfDoc.addPage([595, 842]);
-          yPosition = height - 50;
-        }
-        
-        // Etiqueta del campo
-        page.drawText(`${campo.dsEtiqueta || campo.dsNombreCampo}:`, {
-          x: 60,
-          y: yPosition,
-          size: 10,
-          font: timesRomanBoldFont,
-          color: darkGrayColor,
-        });
-        yPosition -= 15;
-        
-        // Valor del campo (con soporte multilínea)
-        const valueText = displayValue;
-        const valueColor = textColor;
-        
-        // Verificar si hay espacio suficiente, si no, crear nueva página
-        const estimatedLines = Math.ceil(valueText.length / 80); // Estimación aproximada
-        const estimatedHeight = estimatedLines * 14;
-        
-        if (yPosition - estimatedHeight < 80) {
-          page = pdfDoc.addPage([595, 842]);
-          yPosition = height - 50;
-        }
-        
-        // Dibujar texto con soporte multilínea
-        yPosition = drawMultilineText(
-          page,
-          valueText,
-          70,
-          yPosition,
-          timesRomanFont,
-          10,
-          valueColor,
-          465 // maxWidth (545 - 70 - margen derecho)
-        );
-        
-        yPosition -= 10; // Espaciado extra entre campos
       }
     }
 
