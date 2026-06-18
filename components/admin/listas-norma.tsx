@@ -219,7 +219,7 @@ export function ListasNorma({ cdNorma, cdEmpresaConsultora }: ListasNormaProps) 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Listas de la Norma</h3>
+        <h3 className="text-lg font-semibold dark:text-gray-100">Listas de la Norma</h3>
         <Button onClick={() => handleOpenListaDialog()} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Nueva Lista
@@ -227,22 +227,22 @@ export function ListasNorma({ cdNorma, cdEmpresaConsultora }: ListasNormaProps) 
       </div>
 
       {listas.length === 0 ? (
-        <div className="text-center py-8 text-gray-500\">
-          <ListIcon className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+          <ListIcon className="h-12 w-12 mx-auto mb-2 text-gray-300 dark:text-gray-600" />
           <p>No hay listas definidas para esta norma</p>
           <p className="text-sm mt-2">Las listas permiten definir valores fijos para campos de tipo Lista</p>
         </div>
       ) : (
         <div className="space-y-2">
           {listas.map((lista) => (
-            <div key={lista.cdLista} className="border rounded-lg overflow-hidden bg-white">
+            <div key={lista.cdLista} className="border dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
               <div className="flex items-center justify-between p-4">
                 <div className="flex items-center gap-4">
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="font-medium">{lista.dsNombreLista}</p>
+                      <p className="font-medium dark:text-gray-200">{lista.dsNombreLista}</p>
                       {lista.cdEstado === 1 ? (
-                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                        <Badge className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 hover:bg-green-100">
                           <Check className="h-3 w-3 mr-1" />
                           Activo
                         </Badge>
@@ -254,9 +254,9 @@ export function ListasNorma({ cdNorma, cdEmpresaConsultora }: ListasNormaProps) 
                       )}
                     </div>
                     {lista.dsDescripcion && (
-                      <p className="text-sm text-gray-500 mt-1">{lista.dsDescripcion}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{lista.dsDescripcion}</p>
                     )}
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
                       {lista.nuItems} {lista.nuItems === 1 ? 'item' : 'items'}
                     </p>
                   </div>

@@ -33,6 +33,8 @@ import { DashboardHeader } from '@/components/layout/dashboard-header';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
+export const dynamic = 'force-dynamic';
+
 interface Norma {
   cdNorma: number;
   cdCodigo: string;
@@ -247,7 +249,7 @@ export default function NormasPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <DashboardHeader
         userName={userName}
@@ -324,10 +326,10 @@ export default function NormasPage() {
             ) : filteredNormas.length === 0 ? (
               <div className="text-center py-12">
                 <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                   {searchTerm ? 'No se encontraron normas' : 'No hay normas configuradas'}
                 </h3>
-                <p className="text-gray-600 mb-4">
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
                   {searchTerm ? 'Intente con otros términos de búsqueda' : 'Comience creando una nueva norma ISO'}
                 </p>
                 {!searchTerm && (
@@ -358,9 +360,9 @@ export default function NormasPage() {
                         <TableCell className="font-mono font-semibold">{norma.cdCodigo}</TableCell>
                         <TableCell>
                           <div>
-                            <div className="font-medium">{norma.dsNombre}</div>
+                            <div className="font-medium dark:text-gray-200">{norma.dsNombre}</div>
                             {norma.dsDescripcion && (
-                              <div className="text-sm text-gray-600 line-clamp-1">
+                              <div className="text-sm text-gray-600 dark:text-gray-400 line-clamp-1">
                                 {norma.dsDescripcion}
                               </div>
                             )}
@@ -384,9 +386,9 @@ export default function NormasPage() {
                         </TableCell>
                         <TableCell>
                           {norma.nuClientesAsociados > 0 ? (
-                            <Badge className="bg-green-600">{norma.nuClientesAsociados}</Badge>
+                            <Badge className="bg-green-600 dark:bg-green-700">{norma.nuClientesAsociados}</Badge>
                           ) : (
-                            <span className="text-sm text-gray-400">0</span>
+                            <span className="text-sm text-gray-400 dark:text-gray-500">0</span>
                           )}
                         </TableCell>
                         <TableCell>{getEstadoBadge(norma.dsEstado)}</TableCell>

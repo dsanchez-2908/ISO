@@ -202,7 +202,7 @@ export function RequisitosTemplates({ cdNorma }: RequisitosTemplatesProps) {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           {requisitos.length} requisito{requisitos.length !== 1 ? 's' : ''}
         </p>
         <Button onClick={() => handleOpenDialog()} size="sm">
@@ -213,18 +213,18 @@ export function RequisitosTemplates({ cdNorma }: RequisitosTemplatesProps) {
 
       {/* Lista de Requisitos con Accordion */}
       {requisitos.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
           No hay requisitos definidos. Click en "Nuevo Requisito" para agregar uno.
         </div>
       ) : (
         <div className="space-y-2">
           {requisitos.map((requisito) => (
-            <div key={requisito.cdRequisito} className="border rounded-lg overflow-hidden">
+            <div key={requisito.cdRequisito} className="border dark:border-gray-700 rounded-lg overflow-hidden">
               {/* Requisito Header */}
-              <div className="bg-gray-50 px-4 py-3 flex items-center justify-between">
+              <div className="bg-gray-50 dark:bg-gray-800 px-4 py-3 flex items-center justify-between">
                 <button
                   onClick={() => handleToggleRequisito(requisito.cdRequisito)}
-                  className="flex items-center gap-2 flex-1 text-left hover:text-blue-600"
+                  className="flex items-center gap-2 flex-1 text-left hover:text-blue-600 dark:hover:text-blue-400"
                 >
                   {expandedRequisito === requisito.cdRequisito ? (
                     <ChevronDown className="h-5 w-5" />
@@ -233,21 +233,21 @@ export function RequisitosTemplates({ cdNorma }: RequisitosTemplatesProps) {
                   )}
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-semibold">
+                      <span className="font-semibold dark:text-gray-100">
                         {requisito.cdCodigoRequisito} - {requisito.dsRequisito}
                       </span>
                       <span
                         className={`px-2 py-0.5 rounded text-xs ${
                           requisito.cdEstado === 1
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-red-100 text-red-800'
+                            ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                            : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
                         }`}
                       >
                         {requisito.dsEstado}
                       </span>
                     </div>
                     {requisito.dsDescripcion && (
-                      <div className="text-sm text-gray-600 line-clamp-1">
+                      <div className="text-sm text-gray-600 dark:text-gray-400 line-clamp-1">
                         {requisito.dsDescripcion}
                       </div>
                     )}
@@ -286,12 +286,12 @@ export function RequisitosTemplates({ cdNorma }: RequisitosTemplatesProps) {
 
               {/* Formularios del Requisito */}
               {expandedRequisito === requisito.cdRequisito && (
-                <div className="p-4 bg-white border-t">
+                <div className="p-4 bg-white dark:bg-gray-800 border-t dark:border-gray-700">
                   <div className="mb-2">
-                    <h4 className="font-semibold text-sm text-gray-700 mb-1">
+                    <h4 className="font-semibold text-sm text-gray-700 dark:text-gray-200 mb-1">
                       Formularios Asociados
                     </h4>
-                    <p className="text-xs text-gray-500 mb-3">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
                       Los formularios son los documentos que se generarán para este requisito
                     </p>
                   </div>

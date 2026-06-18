@@ -17,6 +17,8 @@ import { ListasClienteList } from '@/components/admin/listas-cliente-list';
 import { DashboardHeader } from '@/components/layout/dashboard-header';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
 
+export const dynamic = 'force-dynamic';
+
 export default function ClienteDetallePage() {
   const params = useParams();
   const router = useRouter();
@@ -96,7 +98,7 @@ export default function ClienteDetallePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <DashboardHeader 
         userName={userName}
@@ -119,8 +121,8 @@ export default function ClienteDetallePage() {
         <div className="mb-6">
           <div className="flex items-start justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{cliente.dsRazonSocial}</h1>
-              <p className="text-gray-500 mt-1">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{cliente.dsRazonSocial}</h1>
+              <p className="text-gray-500 dark:text-gray-400 mt-1">
                 CUIT: {cliente.dsCUIT || 'No especificado'} • Estado: {cliente.dsEstado}
               </p>
             </div>
@@ -199,8 +201,8 @@ export default function ClienteDetallePage() {
                   {/* Sub-pestaña: Empleados */}
                   <TabsContent value="empleados" className="mt-6">
                     <div className="mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">Empleados del Cliente</h3>
-                      <p className="text-sm text-gray-500">Gestiona el personal y empleados del cliente</p>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Empleados del Cliente</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Gestiona el personal y empleados del cliente</p>
                     </div>
                     <ClientesUsuariosList 
                       cdCliente={parseInt(cdCliente)} 
@@ -211,8 +213,8 @@ export default function ClienteDetallePage() {
                   {/* Sub-pestaña: Sectores */}
                   <TabsContent value="sectores" className="mt-6">
                     <div className="mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">Sectores del Cliente</h3>
-                      <p className="text-sm text-gray-500">Gestiona los sectores organizacionales del cliente</p>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Sectores del Cliente</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Gestiona los sectores organizacionales del cliente</p>
                     </div>
                     <SectoresList 
                       cdCliente={parseInt(cdCliente)} 
@@ -223,8 +225,8 @@ export default function ClienteDetallePage() {
                   {/* Sub-pestaña: Puestos */}
                   <TabsContent value="puestos" className="mt-6">
                     <div className="mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">Puestos de Trabajo</h3>
-                      <p className="text-sm text-gray-500">Gestiona los puestos de trabajo disponibles en el cliente</p>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Puestos de Trabajo</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Gestiona los puestos de trabajo disponibles en el cliente</p>
                     </div>
                     <PuestosList 
                       cdCliente={parseInt(cdCliente)} 

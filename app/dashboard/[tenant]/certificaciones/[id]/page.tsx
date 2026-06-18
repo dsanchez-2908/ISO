@@ -80,6 +80,8 @@ interface RegistroAsociado {
   dsNombreTemplate: string;
 }
 
+export const dynamic = 'force-dynamic';
+
 export default function CertificacionPage() {
   const params = useParams();
   const router = useRouter();
@@ -386,7 +388,7 @@ export default function CertificacionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <DashboardHeader
         empresaNombre={empresaNombre}
         logoBase64={empresaLogo}
@@ -408,26 +410,26 @@ export default function CertificacionPage() {
         />
         
         {certificacion && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-            <h1 className="text-3xl font-bold mb-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+            <h1 className="text-3xl font-bold mb-4 dark:text-gray-100">
               Certificación: {certificacion.dsNombreNorma}
             </h1>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-lg">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
               <div>
-                <div className="text-sm text-gray-600">Cliente</div>
-                <div className="font-medium">{certificacion.dsNombreCliente}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Cliente</div>
+                <div className="font-medium dark:text-gray-200">{certificacion.dsNombreCliente}</div>
               </div>
               <div>
-                <div className="text-sm text-gray-600">Código</div>
-                <div className="font-medium">{certificacion.dsCodigo || '-'}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Código</div>
+                <div className="font-medium dark:text-gray-200">{certificacion.dsCodigo || '-'}</div>
               </div>
               <div>
-                <div className="text-sm text-gray-600">Estado</div>
-                <div className="font-medium">{certificacion.dsEstado}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Estado</div>
+                <div className="font-medium dark:text-gray-200">{certificacion.dsEstado}</div>
               </div>
               <div>
-                <div className="text-sm text-gray-600">Auditor</div>
-                <div className="font-medium">{certificacion.dsAuditor || '-'}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Auditor</div>
+                <div className="font-medium dark:text-gray-200">{certificacion.dsAuditor || '-'}</div>
               </div>
             </div>
           </div>
@@ -435,7 +437,7 @@ export default function CertificacionPage() {
 
         {/* Requisitos */}
         <div className="space-y-2">
-          <h2 className="text-xl font-semibold mb-4">Requisitos de la Norma</h2>
+          <h2 className="text-xl font-semibold mb-4 dark:text-gray-100">Requisitos de la Norma</h2>
         
         {requisitos.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
@@ -447,27 +449,27 @@ export default function CertificacionPage() {
               {/* Requisito Header */}
               <button
                 onClick={() => handleToggleRequisito(requisito.cdRequisito)}
-                className="w-full px-4 py-3 bg-gray-50 hover:bg-gray-100 flex items-center justify-between"
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between"
               >
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">{expandedRequisito === requisito.cdRequisito ? '▼' : '▶'}</span>
                   <div className="text-left">
-                    <div className="font-semibold">
+                    <div className="font-semibold dark:text-gray-100">
                       {requisito.cdCodigoRequisito} - {requisito.dsRequisito}
                     </div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
                       {requisito.nuTotalTemplates} formularios | {requisito.nuTotalRegistros} registros
                     </div>
                   </div>
                 </div>
-                <div className="text-sm">
+                <div className="text-sm dark:text-gray-300">
                   {requisito.nuRegistrosCompletos}/{requisito.nuTotalRegistros} completos
                 </div>
               </button>
 
               {/* Contenido del requisito expandido */}
               {expandedRequisito === requisito.cdRequisito && (
-                <div className="p-4 bg-white space-y-4">
+                <div className="p-4 bg-white dark:bg-gray-800 space-y-4">
                   {/* Botones de acción */}
                   <div className="flex gap-2 mb-4 pb-4 border-b">
                     <Button 
@@ -493,20 +495,20 @@ export default function CertificacionPage() {
                   {/* Formularios nuevos/propios */}
                   {registrosPorRequisito[requisito.cdRequisito] && registrosPorRequisito[requisito.cdRequisito].length > 0 && (
                     <div className="space-y-2">
-                      <h3 className="font-semibold text-lg mb-2">Formularios Propios</h3>
+                      <h3 className="font-semibold text-lg mb-2 dark:text-gray-100">Formularios Propios</h3>
                       <div className="space-y-2">
                         {registrosPorRequisito[requisito.cdRequisito].map(registro => (
                           <div
                             key={registro.cdRegistroDocumento}
-                            className="p-3 border rounded hover:bg-gray-50"
+                            className="p-3 border dark:border-gray-700 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
                           >
                             <div className="flex items-start justify-between mb-2">
                               <div className="flex-1">
-                                <div className="font-medium text-base">{registro.dsNombreDocumento}</div>
-                                <div className="text-sm text-gray-500 mt-1">
+                                <div className="font-medium text-base dark:text-gray-200">{registro.dsNombreDocumento}</div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                                   {registro.dsNombreTemplate || 'Sin formulario'}
                                 </div>
-                                <div className="text-sm text-gray-600 mt-1">
+                                <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                                   <span className="inline-block mr-3">
                                     <strong>Fecha:</strong> {new Date(registro.feModificacion || registro.feCreacion).toLocaleDateString('es-AR')}
                                   </span>

@@ -39,6 +39,7 @@ import {
   User,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 interface Empresa {
   cdEmpresaConsultora: number;
@@ -503,6 +504,7 @@ export default function EmpresaDetallePage() {
           <h1 className="text-3xl font-bold">Detalle de Empresa</h1>
         </div>
         <div className="flex items-center space-x-2">
+          <ThemeToggle />
           {empresa.cdEstado === 2 && (
             <Button onClick={handleReactivarEmpresa} disabled={saving}>
               <UserPlus className="h-4 w-4 mr-2" />

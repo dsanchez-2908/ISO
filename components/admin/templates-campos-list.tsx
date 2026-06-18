@@ -464,16 +464,16 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
           </TableHeader>
           <TableBody>
             {campos.map((campo) => (
-              <TableRow key={campo.cdTemplateCampo} className={campo.snEsTitulo ? 'bg-blue-50' : ''}>
+              <TableRow key={campo.cdTemplateCampo} className={campo.snEsTitulo ? 'bg-blue-50 dark:bg-blue-950' : ''}>
                 <TableCell className="font-mono text-sm">{campo.nuOrden}</TableCell>
                 <TableCell>
                   {campo.snEsTitulo ? (
-                    <span className="flex items-center gap-1 text-blue-700">
+                    <span className="flex items-center gap-1 text-blue-700 dark:text-blue-400">
                       <Heading className="h-4 w-4" />
                       Título
                     </span>
                   ) : (
-                    <span className="text-gray-600">Campo</span>
+                    <span className="text-gray-600 dark:text-gray-400">Campo</span>
                   )}
                 </TableCell>
                 <TableCell className="font-medium">
@@ -482,7 +482,7 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
                 <TableCell>{campo.dsEtiqueta || '-'}</TableCell>
                 <TableCell>
                   {!campo.snEsTitulo && campo.dsTipoCampo && (
-                    <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+                    <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs rounded">
                       {campo.dsTipoCampo}
                       {campo.dsTipoCampo === 'Lista' && campo.dsTipoHerencia && (
                         <span className="ml-1 text-xs">
@@ -661,8 +661,8 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
 
                   {/* === OPCIONES PARA TIPO LISTA === */}
                   {esLista && (
-                    <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                      <h4 className="font-medium text-blue-900">Configuración de Lista</h4>
+                    <div className="space-y-4 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
+                      <h4 className="font-medium text-blue-900 dark:text-blue-200">Configuración de Lista</h4>
                       
                       {/* Tipo de Herencia */}
                       <div>
@@ -785,8 +785,8 @@ export function TemplatesCamposList({ cdTemplateDocumento, dsNombreTemplate, cdN
 
                   {/* === OPCIONES PARA TIPO FORMULARIO === */}
                   {tipoCampoNombre === 'Formulario' && (
-                    <div className="space-y-4 p-4 bg-purple-50 rounded-lg border border-purple-200">
-                      <h4 className="font-medium text-purple-900">Configuración de Formulario Anidado</h4>
+                    <div className="space-y-4 p-4 bg-purple-50 dark:bg-purple-950 rounded-lg border border-purple-200 dark:border-purple-800">
+                      <h4 className="font-medium text-purple-900 dark:text-purple-200">Configuración de Formulario Anidado</h4>
                       
                       <div>
                         <Label htmlFor="cdFormularioAsociado">

@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import { DashboardHeader } from '@/components/layout/dashboard-header';
 
+export const dynamic = 'force-dynamic';
+
 export default function DashboardPage() {
   const router = useRouter();
   const params = useParams();
@@ -136,7 +138,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <DashboardHeader 
         userName={userName}
@@ -148,8 +150,8 @@ export default function DashboardPage() {
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Panel de Control</h2>
-          <p className="text-gray-600">Seleccione un módulo para comenzar</p>
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Panel de Control</h2>
+          <p className="text-gray-600 dark:text-gray-400">Seleccione un módulo para comenzar</p>
         </div>
 
         {/* Menu Grid */}
@@ -170,7 +172,7 @@ export default function DashboardPage() {
                       <item.icon className="h-6 w-6" />
                     </div>
                     {item.comingSoon && (
-                      <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full font-medium">
+                      <span className="text-xs bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 px-2 py-1 rounded-full font-medium">
                         Próximamente
                       </span>
                     )}
@@ -194,12 +196,12 @@ export default function DashboardPage() {
         </div>
 
         {/* Info Card */}
-        <Card className="mt-8 bg-blue-50 border-blue-200">
+        <Card className="mt-8 bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800">
           <CardHeader>
-            <CardTitle className="text-lg">Bienvenido al Sistema de Gestión ISO</CardTitle>
+            <CardTitle className="text-lg dark:text-gray-100">Bienvenido al Sistema de Gestión ISO</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-700">
+            <p className="text-gray-700 dark:text-gray-300">
               Este sistema le permite gestionar de forma integral todos los aspectos relacionados con las
               certificaciones de calidad ISO de sus clientes. Utilice el menú superior para navegar entre
               los diferentes módulos.

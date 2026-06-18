@@ -25,6 +25,7 @@ import {
 import { ArrowLeft, Save, Plus, Edit, Trash2, Key, Upload, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 interface ConfigGlobal {
   dsURLBase: string;
@@ -347,6 +348,7 @@ export default function ConfiguracionPage() {
           </Button>
           <h1 className="text-3xl font-bold">Configuración Global</h1>
         </div>
+        <ThemeToggle />
       </div>
 
       <Tabs defaultValue="general" className="space-y-4">

@@ -58,8 +58,8 @@ export function ClienteDetalle({ cliente, cdEmpresaConsultora, onEdit }: Cliente
   const InfoField = ({ label, value }: { label: string; value: any }) => {
     return (
       <div className="space-y-1">
-        <Label className="text-sm font-medium text-gray-700">{label}</Label>
-        <p className="text-sm text-gray-900">{value || '-'}</p>
+        <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</Label>
+        <p className="text-sm text-gray-900 dark:text-gray-100">{value || '-'}</p>
       </div>
     );
   };
@@ -78,7 +78,7 @@ export function ClienteDetalle({ cliente, cdEmpresaConsultora, onEdit }: Cliente
 
       {/* Información Básica */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Información Básica</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Información Básica</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <InfoField label="Código Interno" value={cliente.cdCodigoInternoCliente} />
           <InfoField label="Razón Social" value={cliente.dsRazonSocial} />
@@ -90,7 +90,7 @@ export function ClienteDetalle({ cliente, cdEmpresaConsultora, onEdit }: Cliente
 
       {/* Domicilio y Ubicación */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Domicilio y Ubicación</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Domicilio y Ubicación</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <InfoField label="Domicilio" value={cliente.dsDomicilio} />
           <InfoField label="Localidad" value={cliente.dsLocalidad} />
@@ -102,7 +102,7 @@ export function ClienteDetalle({ cliente, cdEmpresaConsultora, onEdit }: Cliente
 
       {/* Contacto */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Información de Contacto</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Información de Contacto</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <InfoField label="Teléfono" value={cliente.dsTelefono} />
           <InfoField label="Email" value={cliente.dsMail} />
@@ -112,7 +112,7 @@ export function ClienteDetalle({ cliente, cdEmpresaConsultora, onEdit }: Cliente
 
       {/* Contacto Principal */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Contacto Principal</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Contacto Principal</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <InfoField label="Nombre Contacto 1" value={cliente.dsContacto1} />
           <InfoField label="Email Contacto 1" value={cliente.dsMail1} />
@@ -122,7 +122,7 @@ export function ClienteDetalle({ cliente, cdEmpresaConsultora, onEdit }: Cliente
 
       {/* Contacto Secundario */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Contacto Secundario</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Contacto Secundario</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <InfoField label="Nombre Contacto 2" value={cliente.dsContacto2} />
           <InfoField label="Email Contacto 2" value={cliente.dsMail2} />
@@ -132,12 +132,12 @@ export function ClienteDetalle({ cliente, cdEmpresaConsultora, onEdit }: Cliente
 
       {/* Documentos */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Documentos</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Documentos</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Logo del Cliente */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700">Logo del Cliente</Label>
-            <div className="border rounded-lg p-4 bg-gray-50 flex items-center justify-center h-40">
+            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Logo del Cliente</Label>
+            <div className="border dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800 flex items-center justify-center h-40">
               {cliente.dsLogo ? (
                 <img 
                   src={`data:image/png;base64,${cliente.dsLogo}`} 
@@ -145,7 +145,7 @@ export function ClienteDetalle({ cliente, cdEmpresaConsultora, onEdit }: Cliente
                   className="max-h-32 max-w-full object-contain"
                 />
               ) : (
-                <div className="text-center text-gray-400">
+                <div className="text-center text-gray-400 dark:text-gray-500">
                   <Building2 className="h-12 w-12 mx-auto mb-2" />
                   <p className="text-sm">Sin logo</p>
                 </div>
@@ -155,8 +155,8 @@ export function ClienteDetalle({ cliente, cdEmpresaConsultora, onEdit }: Cliente
 
           {/* Constancia de Inscripción */}
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700">Constancia de Inscripción</Label>
-            <div className="border rounded-lg p-4 bg-gray-50 flex items-center justify-center h-40">
+            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Constancia de Inscripción</Label>
+            <div className="border dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-800 flex items-center justify-center h-40">
               {cliente.dsConstanciaInscripcion ? (
                 <div className="text-center">
                   <FileText className="h-12 w-12 mx-auto mb-3 text-blue-600" />
@@ -180,7 +180,7 @@ export function ClienteDetalle({ cliente, cdEmpresaConsultora, onEdit }: Cliente
                   </Button>
                 </div>
               ) : (
-                <div className="text-center text-gray-400">
+                <div className="text-center text-gray-400 dark:text-gray-500">
                   <FileText className="h-12 w-12 mx-auto mb-2" />
                   <p className="text-sm">Sin constancia</p>
                 </div>
@@ -192,7 +192,7 @@ export function ClienteDetalle({ cliente, cdEmpresaConsultora, onEdit }: Cliente
 
       {/* Información Comercial */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Información Comercial</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Información Comercial</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <InfoField label="Condición de Venta" value={cliente.dsCondicionVenta} />
           <InfoField label="Tipo de IVA" value={cliente.dsTipoIVA} />
@@ -203,7 +203,7 @@ export function ClienteDetalle({ cliente, cdEmpresaConsultora, onEdit }: Cliente
 
       {/* Información Adicional */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Información Adicional</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Información Adicional</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <InfoField label="ASCESI" value={cliente.dsASCESI} />
           <InfoField label="Referido Por" value={cliente.dsReferidoPor} />
@@ -213,9 +213,9 @@ export function ClienteDetalle({ cliente, cdEmpresaConsultora, onEdit }: Cliente
       {/* Observaciones */}
       {cliente.dsObservaciones && (
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Observaciones</h3>
-          <div className="bg-gray-50 p-4 rounded-md">
-            <p className="text-sm text-gray-900 whitespace-pre-wrap">{cliente.dsObservaciones}</p>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Observaciones</h3>
+          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-md">
+            <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{cliente.dsObservaciones}</p>
           </div>
         </div>
       )}
@@ -223,9 +223,9 @@ export function ClienteDetalle({ cliente, cdEmpresaConsultora, onEdit }: Cliente
       {/* Necesidad Específica */}
       {cliente.dsNecesidadEspecifica && (
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Necesidad Específica</h3>
-          <div className="bg-gray-50 p-4 rounded-md">
-            <p className="text-sm text-gray-900 whitespace-pre-wrap">{cliente.dsNecesidadEspecifica}</p>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Necesidad Específica</h3>
+          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-md">
+            <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{cliente.dsNecesidadEspecifica}</p>
           </div>
         </div>
       )}

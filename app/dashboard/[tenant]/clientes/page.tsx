@@ -33,6 +33,8 @@ import { useToast } from '@/hooks/use-toast';
 import { DashboardHeader } from '@/components/layout/dashboard-header';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
 
+export const dynamic = 'force-dynamic';
+
 interface Cliente {
   cdCliente: number;
   cdCodigoInternoCliente?: string;
@@ -228,7 +230,7 @@ export default function ClientesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <DashboardHeader 
         userName={userName}
@@ -248,8 +250,8 @@ export default function ClientesPage() {
 
         {/* Título */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Gestión de Clientes</h1>
-          <p className="text-gray-600 mt-1">Administre las empresas cliente que audita</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Gestión de Clientes</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Administre las empresas cliente que audita</p>
         </div>
         {/* Estadísticas */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -319,10 +321,10 @@ export default function ClientesPage() {
             ) : filteredClientes.length === 0 ? (
               <div className="text-center py-12">
                 <Building2 className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
                   {searchTerm ? 'No se encontraron clientes' : 'No hay clientes registrados'}
                 </h3>
-                <p className="text-gray-600 mb-4">
+                <p className="text-gray-600 dark:text-gray-400 mb-4">
                   {searchTerm
                     ? 'Intente con otros términos de búsqueda'
                     : 'Comience agregando un nuevo cliente'}
@@ -357,19 +359,18 @@ export default function ClientesPage() {
                           {cliente.cdCodigoInternoCliente || '-'}
                         </TableCell>
                         <TableCell>
-                          <div className="font-medium">{cliente.dsRazonSocial}</div>
+                          <div className="font-medium dark:text-gray-200">{cliente.dsRazonSocial}</div>
                           {cliente.dsContacto1 && (
-                            <div className="text-sm text-gray-600">{cliente.dsContacto1}</div>
+                            <div className="text-sm text-gray-600 dark:text-gray-400">{cliente.dsContacto1}</div>
                           )}
                         </TableCell>
                         <TableCell className="text-sm">{cliente.dsCUIT || '-'}</TableCell>
                         <TableCell className="text-sm">{cliente.dsLocalidad || '-'}</TableCell>
-                        <TableCell className="text-sm">
-                          {cliente.dsTelefono && (
-                            <div className="text-xs">{cliente.dsTelefono}</div>
+                        <TableCell className="text-sm">\n                          {cliente.dsTelefono && (
+                            <div className="text-xs dark:text-gray-300">{cliente.dsTelefono}</div>
                           )}
                           {cliente.dsMail && (
-                            <div className="text-xs text-blue-600">{cliente.dsMail}</div>
+                            <div className="text-xs text-blue-600 dark:text-blue-400">{cliente.dsMail}</div>
                           )}
                         </TableCell>
                         <TableCell>

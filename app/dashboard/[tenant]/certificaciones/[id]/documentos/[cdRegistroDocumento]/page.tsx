@@ -66,6 +66,8 @@ interface OpcionLista {
   nombre: string;
 }
 
+export const dynamic = 'force-dynamic';
+
 export default function DocumentoFormPage() {
   const params = useParams();
   const router = useRouter();
@@ -675,7 +677,7 @@ export default function DocumentoFormPage() {
     if (campo.snEsTitulo) {
       return (
         <div key={campo.cdTemplateCampo} className="col-span-2 mt-6 mb-2">
-          <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 border-b pb-2">
             {campo.dsTitulo}
           </h3>
         </div>
@@ -696,7 +698,7 @@ export default function DocumentoFormPage() {
       case 1: // Texto
         return (
           <div key={campo.cdTemplateCampo} className="flex flex-col">
-            <label className="text-sm font-medium text-gray-700 mb-1">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               {campo.dsEtiqueta}
               {esRequerido && <span className="text-red-500 ml-1">*</span>}
             </label>
@@ -705,7 +707,7 @@ export default function DocumentoFormPage() {
               value={valor || ''}
               onChange={(e) => handleInputChange(campo.cdTemplateCampo, e.target.value)}
               disabled={esSoloLectura}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:bg-gray-100 dark:disabled:bg-gray-800"
             />
           </div>
         );
@@ -713,7 +715,7 @@ export default function DocumentoFormPage() {
       case 2: // Numero
         return (
           <div key={campo.cdTemplateCampo} className="flex flex-col">
-            <label className="text-sm font-medium text-gray-700 mb-1">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               {campo.dsEtiqueta}
               {esRequerido && <span className="text-red-500 ml-1">*</span>}
             </label>
@@ -722,7 +724,7 @@ export default function DocumentoFormPage() {
               value={valor || ''}
               onChange={(e) => handleInputChange(campo.cdTemplateCampo, e.target.value)}
               disabled={esSoloLectura}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:bg-gray-100 dark:disabled:bg-gray-800"
             />
           </div>
         );
@@ -730,7 +732,7 @@ export default function DocumentoFormPage() {
       case 3: // Fecha
         return (
           <div key={campo.cdTemplateCampo} className="flex flex-col">
-            <label className="text-sm font-medium text-gray-700 mb-1">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               {campo.dsEtiqueta}
               {esRequerido && <span className="text-red-500 ml-1">*</span>}
             </label>
@@ -739,7 +741,7 @@ export default function DocumentoFormPage() {
               value={valor || ''}
               onChange={(e) => handleInputChange(campo.cdTemplateCampo, e.target.value)}
               disabled={esSoloLectura}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:bg-gray-100 dark:disabled:bg-gray-800"
             />
           </div>
         );
@@ -753,7 +755,7 @@ export default function DocumentoFormPage() {
           
           return (
             <div key={campo.cdTemplateCampo} className="flex flex-col space-y-2">
-              <label className="text-sm font-medium text-gray-700">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-200">
                 {campo.dsEtiqueta}
                 {esRequerido && <span className="text-red-500 ml-1">*</span>}
                 <span className="text-xs text-gray-500 ml-2">(Lista Configurada)</span>
@@ -799,7 +801,7 @@ export default function DocumentoFormPage() {
         // Para otros tipos de lista (NORMA o entidades del cliente)
         return (
           <div key={campo.cdTemplateCampo} className="flex flex-col">
-            <label className="text-sm font-medium text-gray-700 mb-1">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               {campo.dsEtiqueta}
               {esRequerido && <span className="text-red-500 ml-1">*</span>}
               {campo.dsTipoHerencia === 'NORMA' && campo.dsNombreLista && (
@@ -826,7 +828,7 @@ export default function DocumentoFormPage() {
       case 5: // TextoLargo
         return (
           <div key={campo.cdTemplateCampo} className="flex flex-col col-span-2">
-            <label className="text-sm font-medium text-gray-700 mb-1">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               {campo.dsEtiqueta}
               {esRequerido && <span className="text-red-500 ml-1">*</span>}
             </label>
@@ -835,7 +837,7 @@ export default function DocumentoFormPage() {
               onChange={(e) => handleInputChange(campo.cdTemplateCampo, e.target.value)}
               disabled={esSoloLectura}
               rows={4}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:bg-gray-100 dark:disabled:bg-gray-800"
             />
           </div>
         );
@@ -843,7 +845,7 @@ export default function DocumentoFormPage() {
       case 6: // Email
         return (
           <div key={campo.cdTemplateCampo} className="flex flex-col">
-            <label className="text-sm font-medium text-gray-700 mb-1">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               {campo.dsEtiqueta}
               {esRequerido && <span className="text-red-500 ml-1">*</span>}
             </label>
@@ -852,7 +854,7 @@ export default function DocumentoFormPage() {
               value={valor || ''}
               onChange={(e) => handleInputChange(campo.cdTemplateCampo, e.target.value)}
               disabled={esSoloLectura}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:bg-gray-100 dark:disabled:bg-gray-800"
             />
           </div>
         );
@@ -860,7 +862,7 @@ export default function DocumentoFormPage() {
       case 7: // Telefono
         return (
           <div key={campo.cdTemplateCampo} className="flex flex-col">
-            <label className="text-sm font-medium text-gray-700 mb-1">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               {campo.dsEtiqueta}
               {esRequerido && <span className="text-red-500 ml-1">*</span>}
             </label>
@@ -869,7 +871,7 @@ export default function DocumentoFormPage() {
               value={valor || ''}
               onChange={(e) => handleInputChange(campo.cdTemplateCampo, e.target.value)}
               disabled={esSoloLectura}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:bg-gray-100 dark:disabled:bg-gray-800"
             />
           </div>
         );
@@ -885,7 +887,7 @@ export default function DocumentoFormPage() {
               disabled={esSoloLectura}
               className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
             />
-            <label htmlFor={`campo-${campo.cdTemplateCampo}`} className="text-sm font-medium text-gray-700">
+            <label htmlFor={`campo-${campo.cdTemplateCampo}`} className="text-sm font-medium text-gray-700 dark:text-gray-200">
               {campo.dsEtiqueta}
               {esRequerido && <span className="text-red-500 ml-1">*</span>}
             </label>
@@ -895,7 +897,7 @@ export default function DocumentoFormPage() {
       case 9: // FechaHora
         return (
           <div key={campo.cdTemplateCampo} className="flex flex-col">
-            <label className="text-sm font-medium text-gray-700 mb-1">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               {campo.dsEtiqueta}
               {esRequerido && <span className="text-red-500 ml-1">*</span>}
             </label>
@@ -904,7 +906,7 @@ export default function DocumentoFormPage() {
               value={valor || ''}
               onChange={(e) => handleInputChange(campo.cdTemplateCampo, e.target.value)}
               disabled={esSoloLectura}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:bg-gray-100 dark:disabled:bg-gray-800"
             />
           </div>
         );
@@ -912,7 +914,7 @@ export default function DocumentoFormPage() {
       case 10: // Decimal
         return (
           <div key={campo.cdTemplateCampo} className="flex flex-col">
-            <label className="text-sm font-medium text-gray-700 mb-1">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               {campo.dsEtiqueta}
               {esRequerido && <span className="text-red-500 ml-1">*</span>}
             </label>
@@ -922,7 +924,7 @@ export default function DocumentoFormPage() {
               value={valor || ''}
               onChange={(e) => handleInputChange(campo.cdTemplateCampo, e.target.value)}
               disabled={esSoloLectura}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 disabled:bg-gray-100 dark:disabled:bg-gray-800"
               placeholder="0.00"
             />
           </div>
@@ -931,15 +933,15 @@ export default function DocumentoFormPage() {
       case 11: // Archivo
         return (
           <div key={campo.cdTemplateCampo} className="flex flex-col col-span-2">
-            <label className="text-sm font-medium text-gray-700 mb-1">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               {campo.dsEtiqueta}
               {esRequerido && <span className="text-red-500 ml-1">*</span>}
             </label>
             <div className="space-y-2">
               {campo.dsNombreArchivo && campo.dsAditusDocId ? (
-                <div className="flex items-center space-x-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-md">
+                <div className="flex items-center space-x-2 px-3 py-2 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-md">
                   <FileText className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm text-gray-700 flex-1">{campo.dsNombreArchivo}</span>
+                  <span className="text-sm text-gray-700 dark:text-gray-300 flex-1">{campo.dsNombreArchivo}</span>
                   <Button
                     type="button"
                     variant="outline"
@@ -982,16 +984,15 @@ export default function DocumentoFormPage() {
       case 12: // Hipervínculo
         return (
           <div key={campo.cdTemplateCampo} className="flex flex-col col-span-2">
-            <label className="text-sm font-medium text-gray-700 mb-1">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               {campo.dsEtiqueta}
               {esRequerido && <span className="text-red-500 ml-1">*</span>}
             </label>
             <div className="space-y-2">
               {campo.cdRegistroVinculado ? (
-                <div className="flex items-center space-x-2 px-3 py-2 bg-green-50 border border-green-200 rounded-md">
-                  <Link2 className="h-4 w-4 text-green-600" />
-                  <span className="text-sm text-gray-700 flex-1">
-                    Registro vinculado: #{campo.cdRegistroVinculado}
+                <div className="flex items-center space-x-2 px-3 py-2 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-md">
+                  <Link2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  <span className="text-sm text-gray-700 dark:text-gray-300 flex-1">\n                    Registro vinculado: #{campo.cdRegistroVinculado}
                   </span>
                   <Button
                     type="button"
@@ -1035,7 +1036,7 @@ export default function DocumentoFormPage() {
         const hijosDelCampo = registrosHijos[campo.cdTemplateCampo] || [];
         return (
           <div key={campo.cdTemplateCampo} className="flex flex-col col-span-2">
-            <label className="text-sm font-medium text-gray-700 mb-1">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">
               {campo.dsEtiqueta}
               {esRequerido && <span className="text-red-500 ml-1">*</span>}
             </label>
@@ -1056,10 +1057,10 @@ export default function DocumentoFormPage() {
               {hijosDelCampo.length > 0 && (
                 <div className="border border-gray-200 rounded-md divide-y">
                   {hijosDelCampo.map((hijo) => (
-                    <div key={hijo.cdRegistroDocumentoHijo} className="flex items-center justify-between p-3 bg-purple-50">
+                    <div key={hijo.cdRegistroDocumentoHijo} className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-950">
                       <div className="flex items-center space-x-2">
                         <FileText className="h-4 w-4 text-purple-600" />
-                        <span className="text-sm text-gray-700">
+                        <span className="text-sm text-gray-700 dark:text-gray-300">
                           {hijo.dsCodigoDocumento} - {hijo.dsNombreDocumento}
                         </span>
                       </div>
@@ -1117,7 +1118,7 @@ export default function DocumentoFormPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <DashboardHeader
         empresaNombre={empresaNombre}
         logoBase64={empresaLogo}
@@ -1140,9 +1141,9 @@ export default function DocumentoFormPage() {
         />
 
         {/* Header del documento */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
               {documento?.dsNombreDocumento || 'Documento sin nombre'}
             </h1>
             <Button
@@ -1157,31 +1158,31 @@ export default function DocumentoFormPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
             <div>
-              <span className="text-gray-600">Código:</span>
-              <p className="font-medium">{documento?.dsCodigoDocumento}</p>
+              <span className="text-gray-600 dark:text-gray-400">Código:</span>
+              <p className="font-medium dark:text-gray-200">{documento?.dsCodigoDocumento}</p>
             </div>
             <div>
-              <span className="text-gray-600">Template:</span>
-              <p className="font-medium">{documento?.dsNombreTemplate}</p>
+              <span className="text-gray-600 dark:text-gray-400">Template:</span>
+              <p className="font-medium dark:text-gray-200">{documento?.dsNombreTemplate}</p>
             </div>
             <div>
-              <span className="text-gray-600">Requisito:</span>
-              <p className="font-medium">{documento?.cdCodigoRequisito} - {documento?.dsRequisito}</p>
+              <span className="text-gray-600 dark:text-gray-400">Requisito:</span>
+              <p className="font-medium dark:text-gray-200">{documento?.cdCodigoRequisito} - {documento?.dsRequisito}</p>
             </div>
             <div>
-              <span className="text-gray-600">Cliente:</span>
-              <p className="font-medium">{documento?.dsNombreCliente}</p>
+              <span className="text-gray-600 dark:text-gray-400">Cliente:</span>
+              <p className="font-medium dark:text-gray-200">{documento?.dsNombreCliente}</p>
             </div>
             <div>
-              <span className="text-gray-600">Norma:</span>
-              <p className="font-medium">{documento?.dsNombreNorma}</p>
+              <span className="text-gray-600 dark:text-gray-400">Norma:</span>
+              <p className="font-medium dark:text-gray-200">{documento?.dsNombreNorma}</p>
             </div>
             <div>
-              <span className="text-gray-600">Estado:</span>
+              <span className="text-gray-600 dark:text-gray-400">Estado:</span>
               <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-                documento?.cdEstadoDocumento === 1 ? 'bg-yellow-100 text-yellow-800' :
-                documento?.cdEstadoDocumento === 3 ? 'bg-green-100 text-green-800' :
-                'bg-gray-100 text-gray-800'
+                documento?.cdEstadoDocumento === 1 ? 'bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200' :
+                documento?.cdEstadoDocumento === 3 ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' :
+                'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'
               }`}>
                 {documento?.dsEstadoDocumento}
               </span>
@@ -1190,7 +1191,7 @@ export default function DocumentoFormPage() {
         </div>
 
         {/* Formulario */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {campos.map(campo => renderCampo(campo))}
           </div>

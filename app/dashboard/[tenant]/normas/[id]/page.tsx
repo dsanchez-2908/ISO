@@ -27,6 +27,8 @@ interface Norma {
   dsEstado: string;
 }
 
+export const dynamic = 'force-dynamic';
+
 export default function NormaDetallePage() {
   const params = useParams();
   const router = useRouter();
@@ -112,7 +114,7 @@ export default function NormaDetallePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <DashboardHeader
         userName={userName}
@@ -134,8 +136,8 @@ export default function NormaDetallePage() {
         <div className="mt-6">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{norma.dsNombre}</h1>
-              <p className="text-gray-500 mt-1">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{norma.dsNombre}</h1>
+              <p className="text-gray-500 dark:text-gray-400 mt-1">
                 Código: {norma.cdCodigoNorma} • Estado: {norma.dsEstado}
               </p>
             </div>
@@ -162,22 +164,22 @@ export default function NormaDetallePage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-500">Tipo</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">Tipo</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-1">
               {norma.snCertificacion && (
-                <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded mr-1">
+                <span className="inline-block px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs rounded mr-1">
                   Certificación
                 </span>
               )}
               {norma.snAcreditacion && (
-                <span className="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
+                <span className="inline-block px-2 py-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 text-xs rounded">
                   Acreditación
                 </span>
               )}
               {!norma.snCertificacion && !norma.snAcreditacion && (
-                <span className="text-sm text-gray-500">No especificado</span>
+                <span className="text-sm text-gray-500 dark:text-gray-400">No especificado</span>
               )}
             </div>
           </CardContent>
@@ -185,32 +187,32 @@ export default function NormaDetallePage() {
         
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-500">Organismo</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">Organismo</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm">{norma.dsOrganismoCertificador || 'No especificado'}</p>
+            <p className="text-sm dark:text-gray-300">{norma.dsOrganismoCertificador || 'No especificado'}</p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-500">Descripción</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">Descripción</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm line-clamp-2">{norma.dsDescripcion || 'Sin descripción'}</p>
+            <p className="text-sm dark:text-gray-300 line-clamp-2">{norma.dsDescripcion || 'Sin descripción'}</p>
           </CardContent>
         </Card>
         
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-500">Estado</CardTitle>
+            <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">Estado</CardTitle>
           </CardHeader>
           <CardContent>
             <span
               className={`inline-block px-2 py-1 rounded text-xs ${
                 norma.cdEstado === 1
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-red-100 text-red-800'
+                  ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                  : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
               }`}
             >
               {norma.dsEstado}

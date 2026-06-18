@@ -31,6 +31,8 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { formatDate } from '@/lib/utils';
 
+export const dynamic = 'force-dynamic';
+
 interface Usuario {
   cdUsuario: number;
   dsUsuario: string;

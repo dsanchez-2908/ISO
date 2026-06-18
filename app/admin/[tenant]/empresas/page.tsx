@@ -27,6 +27,7 @@ import {
 import { EmpresaFormDialog } from '@/components/admin/empresa-form-dialog';
 import { formatDate } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 interface Empresa {
   cdEmpresaConsultora: number;
@@ -184,16 +185,16 @@ export default function EmpresasPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
-      <div className="bg-white border-b shadow-sm">
+      <div className="bg-white dark:bg-gray-900 border-b shadow-sm">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Building2 className="h-8 w-8 text-blue-600" />
+              <Building2 className="h-8 w-8 text-blue-600 dark:text-blue-400" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Gestión de Empresas Consultoras</h1>
-                <p className="text-sm text-gray-600">Super Administrador - {userName}</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Gestión de Empresas Consultoras</h1>
+                <p className="text-sm text-gray-600 dark:text-gray-400">Super Administrador - {userName}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -205,6 +206,7 @@ export default function EmpresasPage() {
                 <Settings className="h-4 w-4 mr-2" />
                 Configuración
               </Button>
+              <ThemeToggle />
               <Button variant="outline" onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Cerrar Sesión
